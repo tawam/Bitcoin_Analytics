@@ -1,33 +1,29 @@
 # Bitcoin Cycle Lab
 
-Dashboard interativo para estudo pessoal de ciclos do Bitcoin, análise técnica, on-chain, derivativos e market cap.
+Site tutorial interativo para estudo pessoal de Bitcoin: ciclos, curvas, análise técnica, on-chain, derivativos, market cap, padrões gráficos e score de confluência.
 
-## Como usar no GitHub Pages
+## Como publicar no GitHub Pages
 
-1. Crie um repositório no GitHub.
-2. Envie todos os arquivos desta pasta para a raiz do repositório.
+1. Envie todos os arquivos desta pasta para a raiz do repositório.
+2. Confirme que `index.html` está na raiz.
 3. Vá em `Settings > Pages`.
 4. Em `Build and deployment`, escolha `Deploy from a branch`.
-5. Selecione a branch `main` e a pasta `/root`.
-6. Abra a URL gerada pelo GitHub Pages.
+5. Selecione branch `main` e pasta `/root` ou `/`.
+6. Salve e aguarde o deploy.
 
-## Estrutura
+O site foi feito para funcionar como estático. Ele usa Plotly via CDN para os gráficos e tenta buscar preço ao vivo na API pública da CoinGecko. Se a API falhar, o site continua funcionando com dados estáticos.
 
-```text
-bitcoin-cycle-lab/
-├── index.html
-├── README.md
-└── assets/
-    ├── css/styles.css
-    └── js/
-        ├── data.js
-        └── app.js
-```
+## Mobile
 
-## Observações
+A versão 2 foi otimizada para celular:
 
-O site usa Plotly via CDN para gráficos. O preço ao vivo tenta carregar a API pública da CoinGecko no navegador. Se a API falhar, o site continua funcionando com dados estáticos.
+- menu lateral vira drawer;
+- gráficos sem zoom, pan ou modebar;
+- eixos com `fixedrange`;
+- campo de pesquisa por data;
+- atalhos de datas macro;
+- seções mais espaçadas e leitura em trilha.
 
-Dados históricos de ciclo são aproximações pedagógicas, com base em Binance, CoinGecko, Bitbo, Reuters, TradingView, StockCharts, Glassnode, CryptoQuant e CoinGlass. Para decisões reais, confira a exchange usada, o candle e a fonte primária.
+## Observação
 
-Não é recomendação financeira.
+Material educacional. Não é recomendação financeira.
