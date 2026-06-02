@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bitcoin Cycle Lab | Dashboard Interativo</title>
+  <meta name="description" content="Dashboard interativo para estudo de ciclos do Bitcoin, análise técnica, on-chain, derivativos, market cap e padrões gráficos." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+<canvas id="orbCanvas" aria-hidden="true"></canvas>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">₿</div>
+      <div><h1>Bitcoin Cycle Lab</h1><p>Manual visual de ciclos, técnica e on-chain</p></div>
+    </div>
+    <nav class="nav">
+      <div class="navGroup"><div class="navTitle">Visão</div>
+        <a href="#inicio" class="active"><span class="navIcon">✦</span>Início</a>
+        <a href="#overview"><span class="navIcon">◈</span>Painel macro</a>
+        <a href="#curvas"><span class="navIcon">⌁</span>Curvas de ciclo</a>
+      </div>
+      <div class="navGroup"><div class="navTitle">Análise</div>
+        <a href="#tecnica"><span class="navIcon">◎</span>Indicadores técnicos</a>
+        <a href="#estrutura"><span class="navIcon">⌬</span>Estrutura gráfica</a>
+        <a href="#onchain"><span class="navIcon">⬡</span>On-chain</a>
+        <a href="#derivativos"><span class="navIcon">↯</span>Derivativos</a>
+        <a href="#marketcap"><span class="navIcon">◍</span>Market cap</a>
+      </div>
+      <div class="navGroup"><div class="navTitle">Estudo</div>
+        <a href="#metodo"><span class="navIcon">☷</span>Método e score</a>
+        <a href="#glossario"><span class="navIcon">⌕</span>Glossário</a>
+        <a href="#codigos"><span class="navIcon">{ }</span>Códigos</a>
+        <a href="#fontes"><span class="navIcon">§</span>Fontes</a>
+      </div>
+    </nav>
+    <div class="sideCard"><b>Regra de ouro</b><p>Um indicador isolado é opinião fantasiada de matemática. Procure confluência entre tempo, preço, estrutura, on-chain, derivativos e macro.</p></div>
+    <div class="sideCard"><b>Base principal</b><p>ATH atual pela Binance BTC/USDT. CoinGecko, Reuters, Bitbo e outros entram como checagem e contexto.</p></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="btn mobileMenu">☰ Menu</button>
+      <div class="searchBox"><span>⌕</span><input id="globalSearch" placeholder="Buscar: RSI, MVRV, drawdown, pivot, funding... Pressione Enter" /></div>
+      <div class="pillRow"><span class="pill">Atualizado: 02/06/2026</span><span class="pill">GitHub Pages ready</span></div>
+    </div>
+
+    <section id="inicio" class="hero">
+      <div class="heroGrid">
+        <div>
+          <div class="eyebrow">₿ laboratório pessoal de análise</div>
+          <h2>Bitcoin sem <span>achismo bonito</span>.</h2>
+          <p>Um site de estudo para desmontar ciclos, indicadores, market cap, on-chain, derivativos e padrões gráficos. A proposta é simples: olhar o Bitcoin como um sistema de sinais imperfeitos, não como calendário sagrado de influencer.</p>
+          <div class="heroActions">
+            <button class="btn primary" onclick="scrollToId('curvas')">Ver curvas de ciclo</button>
+            <button class="btn" onclick="scrollToId('metodo')">Montar score de confluência</button>
+            <button class="btn" onclick="window.print()">Exportar como PDF</button>
+          </div>
+        </div>
+        <div class="heroVisual">
+          <div class="ring"></div><div class="btcCoin">₿</div>
+          <div class="signalCard s1"><small>Preço ao vivo</small><b id="livePrice">carregando...</b></div>
+          <div class="signalCard s2"><small>ATH Binance</small><b>$126.198</b></div>
+          <div class="signalCard s3"><small>Alta atual</small><b>~1.050 dias</b></div>
+          <div class="signalCard s4"><small>Janela de fundo</small><b>out/nov 2026</b></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="overview" class="section">
+      <div class="sectionHeader">
+        <div class="sectionTitle"><h3>Painel macro</h3><p>Resumo dos sinais principais. Aqui o objetivo é enxergar o ciclo inteiro antes de cair no vício de procurar confirmação em um único indicador.</p></div>
+        <span class="pill" id="liveSub">API ao vivo tentando carregar...</span>
+      </div>
+      <div id="kpiGrid" class="grid cols4"></div>
+      <div class="grid cols2" style="margin-top:18px">
+        <div class="card chartCard"><div id="cycleReturnDrawChart" class="chart"></div></div>
+        <div class="card chartCard"><div id="halvingProgressChart" class="chart"></div></div>
+      </div>
+      <div class="card" style="margin-top:18px"><h4>Leitura honesta</h4><p>A repetição mais forte não é a altura da parábola. A altura vem caindo conforme o ativo amadurece. A repetição mais interessante está no tempo: os ciclos maduros de alta ficaram perto de 1.050 a 1.068 dias, enquanto bears completos recentes ficaram perto de 363 a 410 dias.</p></div>
+    </section>
+
+    <section id="curvas" class="section">
+      <div class="sectionHeader">
+        <div class="sectionTitle"><h3>Curvas de ciclo</h3><p>Duração das altas, duração das baixas, drawdown, halving até topo, força log, curva macro por pontos e janela temporal da curva atual.</p></div>
+        <span class="pill">Base: Binance + Bitbo + CoinGecko + Reuters</span>
+      </div>
+      <div class="grid cols2">
+        <div class="card chartCard"><div id="bullDurationChart" class="chart"></div></div>
+        <div class="card chartCard"><div id="bearDurationChart" class="chart"></div></div>
+        <div class="card chartCard"><div id="drawdownChart" class="chart"></div></div>
+        <div class="card chartCard"><div id="logForceChart" class="chart"></div></div>
+        <div class="card chartCard"><div id="currentWindowChart" class="chart"></div></div>
+        <div class="card chartCard"><div id="macroCurveChart" class="chart"></div></div>
+      </div>
+      <div class="grid cols3" style="margin-top:18px">
+        <div class="card"><h4>Duração das altas</h4><p>Tempo entre fundo macro e topo. Serve para comparar ritmo de ciclo, mas não garante preço. Em Bitcoin maduro, tempo repetiu melhor que multiplicação.</p></div>
+        <div class="card"><h4>Drawdown</h4><p>Queda percentual do topo até o fundo. É uma métrica de dor. Uma baixa pode ser longa com drawdown menor, especialmente em mercado mais institucional.</p></div>
+        <div class="card"><h4>Força log</h4><p>Transforma o múltiplo de alta em log10. Isso impede que ciclos antigos gigantes distorçam tudo visualmente e ajuda a ver maturação.</p></div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <h4>Histórico dos ciclos</h4>
+        <div class="tableWrap"><table id="cycleTable"><thead><tr><th>Ciclo</th><th>Fundo inicial</th><th>Topo</th><th>Fundo posterior</th><th>Alta</th><th>Baixa</th><th>Força</th><th>Drawdown</th><th>Nota</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="grid cols2" style="margin-top:18px">
+        <div class="card"><h4>ATH por fonte</h4><p>Exchange diferente dá wick diferente. Para não trapacear a análise, este site usa Binance como base principal do ATH atual e mostra as divergências.</p><div class="tableWrap" style="margin-top:12px"><table id="athTable"><thead><tr><th>Fonte</th><th>Data</th><th>ATH</th><th>Uso</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="card"><h4>Halvings</h4><p>O halving reduz a emissão nova por bloco. Ele não causa topo sozinho, mas historicamente se encaixa em janelas de expansão e euforia.</p><div class="tableWrap" style="margin-top:12px"><table id="halvingTable"><thead><tr><th>Evento</th><th>Data</th><th>Bloco</th><th>Preço aprox.</th></tr></thead><tbody></tbody></table></div></div>
+      </div>
+    </section>
+
+    <section id="tecnica" class="section">
+      <div class="sectionHeader"><div class="sectionTitle"><h3>Indicadores técnicos</h3><p>RSI, médias móveis e estocástico explicados com gráficos didáticos. Eles não preveem o futuro. Eles medem estado do mercado.</p></div></div>
+      <div id="indicatorGrid" class="grid cols3"></div>
+      <div class="grid cols3" style="margin-top:18px">
+        <div class="card chartCard"><div id="maDemoChart" class="chart sm"></div></div>
+        <div class="card chartCard"><div id="rsiDemoChart" class="chart sm"></div></div>
+        <div class="card chartCard"><div id="stochDemoChart" class="chart sm"></div></div>
+      </div>
+      <div class="note danger" style="margin-top:18px">Ponto cego comum: RSI sobrevendido em tendência de baixa não é compra automática. Em bear market, sobrevenda pode virar só uma pausa antes de outra perna para baixo.</div>
+    </section>
+
+    <section id="estrutura" class="section">
+      <div class="sectionHeader"><div class="sectionTitle"><h3>Estrutura gráfica</h3><p>Pivot, canais e cunhas são leitura de comportamento. O desenho fica bonito depois. O que importa é confirmação por fechamento, volume, contexto e invalidação.</p></div></div>
+      <div class="grid cols2">
+        <div class="card">
+          <div class="patternControls">
+            <button class="active" data-pattern="pivotAlta">Pivot alta</button>
+            <button data-pattern="pivotBaixa">Pivot baixa</button>
+            <button data-pattern="canalAlta">Canal alta</button>
+            <button data-pattern="canalBaixa">Canal baixa</button>
+            <button data-pattern="cunhaAsc">Cunha asc.</button>
+            <button data-pattern="cunhaDesc">Cunha desc.</button>
+          </div>
+          <div class="patternStage"><svg id="patternSvg" viewBox="0 0 460 280" width="100%" height="100%" role="img" aria-label="Padrão gráfico"></svg></div>
+        </div>
+        <div class="card"><h4 id="patternTitle">Pivot de alta</h4><p id="patternDesc"></p><div class="note" style="margin-top:18px">Pergunta que salva dinheiro: o preço confirmou estrutura ou só desenhou uma forma sedutora no gráfico?</div><div class="timeline"><div class="timeItem"><b>1. Identifique a tendência dominante</b><p>Alta, baixa ou lateral. Padrão contra tendência precisa de mais prova.</p></div><div class="timeItem"><b>2. Marque suporte e resistência</b><p>Sem níveis relevantes, padrão vira desenho livre.</p></div><div class="timeItem"><b>3. Espere fechamento</b><p>Wick sozinho é armadilha clássica em cripto.</p></div><div class="timeItem"><b>4. Defina invalidação</b><p>Sem invalidação, análise vira torcida.</p></div></div></div>
+      </div>
+    </section>
+
+    <section id="onchain" class="section">
+      <div class="sectionHeader"><div class="sectionTitle"><h3>On-chain</h3><p>Métricas on-chain tentam medir custo, lucro, realização de prejuízo, fluxo para exchanges e comportamento de holders. São sinais fortes, mas não são raios X perfeitos.</p></div></div>
+      <div class="grid cols3">
+        <div class="card"><h4>MVRV</h4><p>Preço de mercado dividido pelo valor realizado. Alto demais sugere lucro não realizado e risco de distribuição. Baixo demais sugere capitulação.</p></div>
+        <div class="card"><h4>Realized Price</h4><p>Custo médio agregado das moedas quando se moveram pela última vez on-chain. Funciona como piso psicológico em ciclos ruins.</p></div>
+        <div class="card"><h4>SOPR</h4><p>Mostra se moedas gastas foram vendidas com lucro ou prejuízo. A região 1 separa lucro de prejuízo agregado.</p></div>
+      </div>
+      <div class="grid cols3" style="margin-top:18px">
+        <div class="card chartCard"><div id="mvrvChart" class="chart sm"></div></div>
+        <div class="card chartCard"><div id="soprChart" class="chart sm"></div></div>
+        <div class="card chartCard"><div id="reserveChart" class="chart sm"></div></div>
+      </div>
+      <div class="note" style="margin-top:18px">Armadilha metodológica: nem tudo acontece on-chain. ETFs, corretoras, custodiantes e derivativos movem preço sem aparecer como transação direta de varejo no blockchain.</div>
+    </section>
+
+    <section id="derivativos" class="section">
+      <div class="sectionHeader"><div class="sectionTitle"><h3>Derivativos e liquidez</h3><p>Funding, open interest e liquidações mostram onde o mercado está alavancado. Às vezes o preço não cai porque “mudou fundamento”, cai porque uma pilha de longs virou combustível.</p></div></div>
+      <div class="grid cols2">
+        <div class="card chartCard"><div id="fundingOiChart" class="chart"></div></div>
+        <div class="card chartCard"><div id="liquidationChart" class="chart"></div></div>
+      </div>
+      <div class="grid cols3" style="margin-top:18px">
+        <div class="card"><h4>Funding positivo demais</h4><p>Longs pagando shorts. Pode indicar euforia, alavancagem excessiva e risco de long squeeze.</p></div>
+        <div class="card"><h4>Funding negativo demais</h4><p>Shorts pagando longs. Pode indicar medo extremo e risco de short squeeze, mas só com suporte/estrutura.</p></div>
+        <div class="card"><h4>Open interest alto</h4><p>Muita posição aberta. Com volatilidade e pouca liquidez, vira barril de pólvora.</p></div>
+      </div>
+    </section>
+
+    <section id="marketcap" class="section">
+      <div class="sectionHeader"><div class="sectionTitle"><h3>Market cap</h3><p>Market cap é preço multiplicado pela oferta circulante. Ajuda a dimensionar o tamanho do ativo, mas não diz sozinho se está caro ou barato.</p></div></div>
+      <div class="grid cols2">
+        <div class="card">
+          <h4>Calculadora</h4>
+          <p>Teste cenários de preço e veja o tamanho do Bitcoin em valor de mercado.</p>
+          <div class="sliderRow"><label>Preço BTC em USD</label><input id="priceInput" type="number" min="1" step="1000" value="126198"><output></output></div>
+          <div class="sliderRow"><label>Supply circulante</label><input id="supplyInput" type="number" min="1" step="1000" value="20000000"><output></output></div>
+          <div class="metric accent" id="capOut">$0</div><p id="rankOut"></p>
+        </div>
+        <div class="card chartCard"><div id="marketCapCompareChart" class="chart"></div></div>
+      </div>
+      <div class="note danger" style="margin-top:18px">Market cap não significa “dinheiro colocado”. É uma marcação pelo último preço. Se a liquidez secar, o market cap evapora mais rápido do que parece.</div>
+    </section>
+
+    <section id="metodo" class="section">
+      <div class="sectionHeader"><div class="sectionTitle"><h3>Método e score de confluência</h3><p>Use esta área como checklist mental. Não é algoritmo mágico. É disciplina para não comprar narrativa quando faltam sinais.</p></div></div>
+      <div class="grid cols2">
+        <div class="card"><h4>Score manual</h4><p>Ajuste cada camada de 0 a 100 conforme sua leitura. O peso não precisa ser perfeito; o objetivo é te forçar a pensar em múltiplas dimensões.</p><div id="scoreInputs"></div></div>
+        <div class="card"><h4>Resultado</h4><div id="scoreOrb" class="scoreOrb"><strong>50</strong></div><p id="scoreText"></p><div class="note" style="margin-top:18px">Uma tese boa precisa sobreviver aos invalidadores. Pergunte: o que teria que acontecer para eu admitir que estou errado?</div></div>
+      </div>
+      <div class="grid cols4" style="margin-top:18px">
+        <div class="card"><h4>1. Ciclo</h4><p>Onde estamos no tempo? Fundo, acumulação, expansão, topo, capitulação?</p></div>
+        <div class="card"><h4>2. Estrutura</h4><p>Topos e fundos estão subindo ou caindo? Houve pivot confirmado?</p></div>
+        <div class="card"><h4>3. Momentum</h4><p>RSI/estocástico confirmam força ou mostram divergência?</p></div>
+        <div class="card"><h4>4. Fluxo</h4><p>On-chain, ETFs, funding e OI estão ajudando ou ameaçando a tese?</p></div>
+      </div>
+    </section>
+
+    <section id="glossario" class="section">
+      <div class="sectionHeader"><div class="sectionTitle"><h3>Glossário buscável</h3><p>Conceitos explicados sem perfumaria. Use a busca para revisar termos enquanto analisa o gráfico.</p></div></div>
+      <div class="glossaryTools"><input id="glossarySearch" placeholder="Buscar termo..." /><select id="glossaryCat"></select></div>
+      <div id="glossaryList" class="glossaryList"></div>
+    </section>
+
+    <section id="codigos" class="section">
+      <div class="sectionHeader"><div class="sectionTitle"><h3>Fórmulas e pseudo-códigos</h3><p>Blocos simples para entender como cada cálculo nasce. Não é biblioteca de trading pronta. É alfabetização técnica.</p></div></div>
+      <div id="codeGrid" class="grid cols2"></div>
+    </section>
+
+    <section id="fontes" class="section">
+      <div class="sectionHeader"><div class="sectionTitle"><h3>Fontes e metodologia</h3><p>As fontes foram separadas por função. Exchange para wick específico, agregador para visão de mercado, Bitbo para ciclos/halving, TradingView/StockCharts para técnica, Glassnode/CryptoQuant/CoinGlass para on-chain e derivativos.</p></div></div>
+      <div class="sourceList" id="sourceList"></div>
+      <div class="card" style="margin-top:18px"><h4>Nota metodológica</h4><p>Não misture wick de uma corretora com fundo de outra sem avisar. Para o ciclo atual, este site usa Binance como referência principal do ATH por ser uma das maiores corretoras e publicar o valor de US$ 126.198,07 em 06/10/2025. Para análises históricas e contexto, cruza com CoinGecko, Bitbo e Reuters. Quando houver decisão real, confira a exchange onde você opera e o timeframe exato do candle.</p></div>
+    </section>
+
+    <footer class="footer"><p><b>Bitcoin Cycle Lab.</b> Feito para estudo pessoal. Não é recomendação financeira. O mercado pune certeza arrogante. Use como mapa, não como volante automático.</p></footer>
+  </main>
+</div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
