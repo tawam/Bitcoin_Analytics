@@ -25,12 +25,38 @@ const plotLayoutBase = {
 };
 
 function isMobileChart(){ return window.matchMedia('(max-width:640px)').matches; }
-function xAxisForTf(tf){
+function formatTickLabel(date, tf, mobile=isMobileChart()){
+  const d = new Date(date);
+  if(tf === '1h') return mobile
+    ? d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
+    : d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if(tf === '4h') return mobile
+    ? d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
+    : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+  return mobile
+    ? d.toLocaleDateString('pt-BR',{month:'short'})
+    : d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+}
+function buildDateAxis(rows, tf){
   const mobile = isMobileChart();
-  const base = { ...plotLayoutBase.xaxis, nticks: mobile ? 4 : 7, tickangle:0, automargin:true };
-  if(tf === '1h') return {...base, tickformat: mobile ? '%d/%m' : '%d/%m<br>%Hh', hoverformat:'%d/%m/%Y %H:%M'};
-  if(tf === '4h') return {...base, tickformat: mobile ? '%d/%m' : '%d/%m<br>%Hh', hoverformat:'%d/%m/%Y %H:%M'};
-  return {...base, tickformat: mobile ? '%m/%y' : '%m/%y', hoverformat:'%d/%m/%Y'};
+  const count = rows?.length || 0;
+  const tickCount = mobile ? (tf==='1d' ? 4 : 5) : (tf==='1d' ? 6 : 7);
+  const step = Math.max(1, Math.floor((count - 1) / Math.max(1, tickCount - 1)));
+  const vals = [];
+  for(let i=0;i<count;i+=step) vals.push(new Date(rows[i].time));
+  if(count && vals.length && +vals[vals.length-1] !== +new Date(rows[count-1].time)) vals.push(new Date(rows[count-1].time));
+  const uniqueVals = vals.filter((v,i,a)=>i===0 || +v !== +a[i-1]);
+  const ticktext = uniqueVals.map(v => formatTickLabel(v, tf, mobile));
+  return {
+    ...plotLayoutBase.xaxis,
+    type:'date',
+    tickmode:'array',
+    tickvals: uniqueVals,
+    ticktext,
+    tickangle:0,
+    automargin:true,
+    hoverformat: tf==='1d' ? '%d/%m/%Y' : '%d/%m/%Y %H:%M'
+  };
 }
 
 function toast(msg){ const el=$('#toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
@@ -301,11 +327,11 @@ function renderPriceChart(tf){
   $('#priceChartLabel').textContent=`BTCUSDT · ${tf.toUpperCase()}`;
   const x=rows.map(r=>new Date(r.time));
   const data=[
-    {type:'candlestick', x, open:rows.map(r=>r.open), high:rows.map(r=>r.high), low:rows.map(r=>r.low), close:rows.map(r=>r.close), name:'Preço', increasing:{line:{color:'#40d99a'}}, decreasing:{line:{color:'#ff5f7b'}}},
-    {type:'scatter', mode:'lines', x, y:rows.map(r=>r.ema21), name:'EMA 21', line:{color:'#f5b544', width:2}},
-    {type:'scatter', mode:'lines', x, y:rows.map(r=>r.ema50), name:'EMA 50', line:{color:'#52d8ff', width:2}}
+    {type:'candlestick', x, open:rows.map(r=>r.open), high:rows.map(r=>r.high), low:rows.map(r=>r.low), close:rows.map(r=>r.close), name:'Preço', increasing:{line:{color:'#40d99a'}}, decreasing:{line:{color:'#ff5f7b'}}, hovertemplate:'%{x|%d/%m/%Y %H:%M}<br>O %{open:$,.0f} · H %{high:$,.0f}<br>L %{low:$,.0f} · C %{close:$,.0f}<extra></extra>'},
+    {type:'scatter', mode:'lines', x, y:rows.map(r=>r.ema21), name:'EMA 21', line:{color:'#f5b544', width:2}, hovertemplate:'EMA 21 %{y:$,.0f}<extra></extra>'},
+    {type:'scatter', mode:'lines', x, y:rows.map(r=>r.ema50), name:'EMA 50', line:{color:'#52d8ff', width:2}, hovertemplate:'EMA 50 %{y:$,.0f}<extra></extra>'}
   ];
-  const layout={...plotLayoutBase, margin:{...plotLayoutBase.margin,b:isMobileChart()?42:48}, xaxis:{...xAxisForTf(tf), rangeslider:{visible:false}}, yaxis:{...plotLayoutBase.yaxis, tickprefix:'$', nticks:isMobileChart()?4:5}};
+  const layout={...plotLayoutBase, margin:{...plotLayoutBase.margin,b:isMobileChart()?42:48}, xaxis:{...buildDateAxis(rows, tf), rangeslider:{visible:false}}, yaxis:{...plotLayoutBase.yaxis, tickprefix:'$', nticks:isMobileChart()?4:5}};
   renderPriceChartNote(tf, rows);
   Plotly.react('priceChart',data,layout,plotConfig);
 }
@@ -326,13 +352,13 @@ function renderRsiChart(tf){
     {type:'scatter',mode:'lines',x,y,name:'RSI 14',line:{color:'#9a7cff',width:3}, hovertemplate:'RSI %{y:.1f}<extra></extra>'},
     {type:'scatter',mode:'lines',x,y:rows.map(()=>30),name:'Sobrevenda',line:{color:'#40d99a',dash:'dot'}, hoverinfo:'skip'},
     {type:'scatter',mode:'lines',x,y:rows.map(()=>70),name:'Sobrecompra',line:{color:'#ff5f7b',dash:'dot'}, hoverinfo:'skip'}
-  ],{...plotLayoutBase, margin:{...plotLayoutBase.margin,b:isMobileChart()?38:44}, xaxis:xAxisForTf(tf), yaxis:{...plotLayoutBase.yaxis,range:[0,100],nticks:5}},plotConfig);
+  ],{...plotLayoutBase, margin:{...plotLayoutBase.margin,b:isMobileChart()?38:44}, xaxis:buildDateAxis(rows, tf), yaxis:{...plotLayoutBase.yaxis,range:[0,100],nticks:5}},plotConfig);
 }
 function renderVolumeChart(tf){
   const rows=state.candles[tf]||[]; if(!rows.length || !window.Plotly){ renderEmptyChart('volumeChart','Sem volume real disponível.'); return; }
   const x=rows.map(r=>new Date(r.time));
   const colors=rows.map(r=>r.close>=r.open?'#40d99a':'#ff5f7b');
-  Plotly.react('volumeChart',[{type:'bar',x,y:rows.map(r=>r.volume),marker:{color:colors},name:'Volume',hovertemplate:'Volume %{y:,.0f}<extra></extra>'}],{...plotLayoutBase, margin:{...plotLayoutBase.margin,b:isMobileChart()?38:44}, xaxis:xAxisForTf(tf), yaxis:{...plotLayoutBase.yaxis,nticks:isMobileChart()?3:4}},plotConfig);
+  Plotly.react('volumeChart',[{type:'bar',x,y:rows.map(r=>r.volume),marker:{color:colors},name:'Volume',hovertemplate:'Volume %{y:,.0f}<extra></extra>'}],{...plotLayoutBase, margin:{...plotLayoutBase.margin,b:isMobileChart()?38:44}, xaxis:buildDateAxis(rows, tf), yaxis:{...plotLayoutBase.yaxis,nticks:isMobileChart()?3:4}},plotConfig);
 }
 function renderCycleCharts(){
   if(!window.Plotly) return; const rows=BTC_STATIC.cycleRows;
@@ -400,8 +426,16 @@ function updateMarketPanel(){
   const mc = gecko?.usd_market_cap;
   const vol = gecko?.usd_24h_vol;
   const updated = gecko?.last_updated_at ? shortDate(gecko.last_updated_at*1000) : '—';
+  const change = gecko?.usd_24h_change;
   const el=$('#marketSnapshot');
-  if(el) el.innerHTML = `Preço agregado: <b>${fmtUSD(gecko?.usd)}</b> · Market cap: <b>${fmtUSD(mc)}</b> · Volume 24h: <b>${fmtUSD(vol)}</b> · Atualizado: ${updated}.`;
+  if(el) el.innerHTML = `
+    <div class="market-metric-list">
+      <div class="market-metric"><span>Preço agregado</span><strong>${fmtUSD(gecko?.usd)}</strong><small>CoinGecko · BTC/USD</small></div>
+      <div class="market-metric"><span>Market cap</span><strong>${fmtUSD(mc)}</strong><small>Preço agregado × supply circulante</small></div>
+      <div class="market-metric"><span>Volume 24h</span><strong>${fmtUSD(vol)}</strong><small>Atividade negociada nas últimas 24h</small></div>
+      <div class="market-metric"><span>Variação 24h</span><strong class="${change>=0?'positive':'negative'}">${fmtPct(change)}</strong><small>Movimento agregado do mercado</small></div>
+      <div class="market-metric"><span>Atualizado</span><strong>${updated}</strong><small>Horário da última leitura</small></div>
+    </div>`;
   calculateMarketCap();
 }
 function calculateMarketCap(){
