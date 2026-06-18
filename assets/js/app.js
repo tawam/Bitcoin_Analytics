@@ -15,13 +15,23 @@ const state = {
 const plotConfig = {displayModeBar:false, scrollZoom:false, doubleClick:false, responsive:true, staticPlot:false, editable:false};
 const plotLayoutBase = {
   paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
-  font:{family:'Inter, sans-serif', color:'#c5d2e6'}, margin:{l:46,r:18,t:18,b:42},
-  xaxis:{showgrid:false, zeroline:false, fixedrange:true, color:'#7f8da5'},
-  yaxis:{gridcolor:'rgba(255,255,255,.075)', zeroline:false, fixedrange:true, color:'#7f8da5'},
+  font:{family:'Inter, sans-serif', color:'#c5d2e6'}, margin:{l:46,r:18,t:18,b:52},
+  xaxis:{showgrid:false, zeroline:false, fixedrange:true, color:'#7f8da5', tickangle:0, automargin:true, tickfont:{size:12}},
+  yaxis:{gridcolor:'rgba(255,255,255,.065)', zeroline:false, fixedrange:true, color:'#7f8da5', automargin:true, tickfont:{size:12}},
   hoverlabel:{bgcolor:'#10192b', bordercolor:'#33415f', font:{color:'#eef3ff'}},
-  showlegend:true, legend:{orientation:'h', y:-.2, x:0},
+  showlegend:false,
+  hovermode:'x unified',
   dragmode:false
 };
+
+function isMobileChart(){ return window.matchMedia('(max-width:640px)').matches; }
+function xAxisForTf(tf){
+  const mobile = isMobileChart();
+  const base = { ...plotLayoutBase.xaxis, nticks: mobile ? 4 : 7, tickangle:0, automargin:true };
+  if(tf === '1h') return {...base, tickformat: mobile ? '%d/%m' : '%d/%m<br>%Hh', hoverformat:'%d/%m/%Y %H:%M'};
+  if(tf === '4h') return {...base, tickformat: mobile ? '%d/%m' : '%d/%m<br>%Hh', hoverformat:'%d/%m/%Y %H:%M'};
+  return {...base, tickformat: mobile ? '%m/%y' : '%m/%y', hoverformat:'%d/%m/%Y'};
+}
 
 function toast(msg){ const el=$('#toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
 function fmtUSD(v){ if(v===null||v===undefined||isNaN(v)) return '—'; return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:v>1000?0:2}).format(v); }
@@ -104,6 +114,12 @@ function buildLiveModel({ticker, depth, funding, fng, cg}){
   const activeLast = latest(activeRows);
   const volAvg = avg(volumes.slice(0,-1));
   const volRatio = volAvg && activeLast ? activeLast.volume / volAvg : null;
+  const rows1h = state.candles['1h'] || [];
+  const last1h = latest(rows1h);
+  const vol1hBase = rows1h.slice(-169, -1).map(x=>x.volume);
+  const vol1hAvg = avg(vol1hBase);
+  const vol1hRatio = vol1hAvg && last1h ? last1h.volume / vol1hAvg : null;
+  const volumeStatus = volumeStatusFromRatio(vol1hRatio);
   const rsi1 = c1?.rsi ?? null, rsi4 = c4?.rsi ?? null, rsiD=cD?.rsi ?? null;
   const dayRed = cD ? cD.close < cD.open : null;
   const dailyChange = cD ? ((cD.close/cD.open)-1)*100 : null;
@@ -120,7 +136,7 @@ function buildLiveModel({ticker, depth, funding, fng, cg}){
     rsiDContext: rsiD!==null && rsiD<45,
     fngLow: fngValue!==null && fngValue<=30,
     fundingOk: fundingRate!==null && fundingRate<=0.01,
-    volumeStress: volRatio!==null && volRatio>=1.25
+    volumeStress: vol1hRatio!==null && vol1hRatio>=1.5
   };
   const score = Object.values(criteria).filter(Boolean).length;
   const scoreMax = Object.keys(criteria).length;
@@ -139,7 +155,15 @@ function buildLiveModel({ticker, depth, funding, fng, cg}){
   if(dataOk && !criteria.fngLow) missing.push('Fear & Greed abaixo de 30');
   if(dataOk && !criteria.fundingOk) missing.push('funding neutro/negativo');
   if(dataOk && !criteria.volumeStress) missing.push('volume acima da média');
-  return { dataOk, essentialMissing, price, ch24, gecko, fngValue, fngClass, fundingRate, nextFunding, depthModel, rsi1, rsi4, rsiD, dayRed, dailyChange, emaDist, volRatio, criteria, score, scoreMax, verdict, action, level, missing, candles:{c1,c4,cD}, ticker, funding };
+  return { dataOk, essentialMissing, price, ch24, gecko, fngValue, fngClass, fundingRate, nextFunding, depthModel, rsi1, rsi4, rsiD, dayRed, dailyChange, emaDist, volRatio, vol1hRatio, volumeStatus, criteria, score, scoreMax, verdict, action, level, missing, candles:{c1,c4,cD}, ticker, funding };
+}
+
+function volumeStatusFromRatio(ratio){
+  if(ratio===null || ratio===undefined || !Number.isFinite(ratio)) return {label:'indisponível', className:'bad', detail:'Volume 1H não carregado.'};
+  if(ratio>=2.5) return {label:'pânico', className:'bad', detail:'Volume 1H acima de 2,5x a média recente.'};
+  if(ratio>=1.5) return {label:'estresse', className:'warn', detail:'Volume 1H acima de 1,5x a média recente.'};
+  if(ratio>=1.0) return {label:'ativo', className:'ok', detail:'Volume 1H acima da média, mas sem capitulação clara.'};
+  return {label:'morno', className:'ok', detail:'Volume 1H abaixo da média recente.'};
 }
 
 function analyzeDepth(depth, price){
@@ -153,20 +177,79 @@ function analyzeDepth(depth, price){
 }
 function setStatus(mode){ const s=$('#sideStatus'); if(!s) return; s.className='status-pill'; if(mode==='live') {s.classList.add('live'); s.innerHTML='<span></span> dados atualizados';} else if(mode==='partial'){s.classList.add('err'); s.innerHTML='<span></span> dados parciais';} else {s.innerHTML='<span></span> atualizando dados...';} }
 
-function renderAllLive(){ renderLiveCards(); renderSources(); renderVerdict(); renderChecklist(); renderCharts(); renderDatePresets(); renderDecisionList(); }
+function renderAllLive(){ renderTacticalPanel(); renderLiveCards(); renderSources(); renderVerdict(); renderChecklist(); renderCharts(); renderDatePresets(); renderDecisionList(); }
+
+function tacticalRead(label, value, detail, okClass=''){
+  return `<tr><th>${label}</th><td>${value}</td><td class="${okClass}">${detail}</td></tr>`;
+}
+function renderTacticalPanel(){
+  const l=state.live;
+  if(!l){
+    $('#tacticalRows').innerHTML = tacticalRead('Status','—','aguardando APIs');
+    return;
+  }
+  let trafficClass = 'red';
+  let title = 'Sinal vermelho';
+  let text = 'A regra anti-FOMO ainda não liberou janela de aporte. A ação padrão é aguardar.';
+  if(!l.dataOk){
+    trafficClass = 'gray';
+    title = 'Dados indisponíveis';
+    text = 'Faltam dados essenciais. O site não gera sinal com API incompleta.';
+  } else if(l.criteria.rsiShort && l.criteria.fngLow && l.criteria.dayRed && l.score>=4){
+    trafficClass = 'green';
+    title = 'Janela da regra pessoal';
+    text = 'RSI curto estressado + medo global + queda diária. Confira liquidez e contexto antes de qualquer decisão.';
+  } else if(l.criteria.rsiShort || l.criteria.fngLow || l.score>=3){
+    trafficClass = 'yellow';
+    title = 'Atenção, estresse parcial';
+    text = 'Há sinais de tensão, mas a confluência ainda não está completa.';
+  }
+  const light=$('#trafficLight');
+  if(light) light.className = `traffic-light ${trafficClass}`;
+  const t=$('#trafficTitle'); if(t) t.textContent = title;
+  const tx=$('#trafficText'); if(tx) tx.textContent = text;
+
+  const rsiShortVal = `${fmtNum(l.rsi1,1)} / ${fmtNum(l.rsi4,1)}`;
+  const rsiRead = l.criteria.rsiShort ? 'gatilho ativo < 30' : 'sem sobrevenda curta';
+  const fngRead = l.fngValue!==null ? (l.fngValue<=10?'pânico extremo':l.fngValue<=20?'medo extremo':l.fngValue<=30?'medo':'sem medo tático') : 'indisponível';
+  const fundingRead = l.fundingRate!==null ? (l.fundingRate<=0?'neutro/negativo':'positivo') : 'indisponível';
+  $('#tacticalRows').innerHTML = [
+    tacticalRead('Preço atual', fmtUSD(l.price), `${fmtPct(l.ch24)} 24h`, l.ch24<0?'warn':'ok'),
+    tacticalRead('RSI 1H / 4H', rsiShortVal, rsiRead, l.criteria.rsiShort?'warn':''),
+    tacticalRead('Fear & Greed', l.fngValue!==null?`${l.fngValue} · ${l.fngClass}`:'—', fngRead, l.criteria.fngLow?'warn':''),
+    tacticalRead('Funding', l.fundingRate!==null?`${fmtNum(l.fundingRate,4)}%`:'—', fundingRead, l.criteria.fundingOk?'ok':''),
+    tacticalRead('Volume 1H', l.vol1hRatio?`${fmtNum(l.vol1hRatio,2)}x média`:'—', l.volumeStatus.label, l.volumeStatus.className),
+    tacticalRead('Semáforo', title, l.dataOk ? `${l.score}/${l.scoreMax} critérios` : 'bloqueado', trafficClass==='green'?'ok':trafficClass==='yellow'?'warn':'bad')
+  ].join('');
+}
+function setCompactMode(enabled){
+  document.body.classList.toggle('compact-mode', enabled);
+  localStorage.setItem('btcCompactMode', enabled ? '1' : '0');
+  const btn=$('#toggleCompact');
+  if(btn) btn.textContent = enabled ? 'Modo completo' : 'Modo texto';
+}
+
 function renderLiveCards(){
   const l=state.live; const err=state.errors.length;
   const geckoUpdated = l.gecko?.last_updated_at ? shortDate(l.gecko.last_updated_at*1000) : 'Fonte: CoinGecko';
   const geckoDesc = l.gecko ? `${fmtPct(l.gecko.usd_24h_change)} 24h · vol. ${fmtUSD(l.gecko.usd_24h_vol)}` : 'Preço agregado indisponível';
   $('#liveCards').innerHTML = [
     card('Preço Binance Spot', fmtUSD(l.price), `${fmtPct(l.ch24)} em 24h · BTCUSDT`, l.ch24>=0?'ok':'bad'),
-    card('CoinGecko agregado', l.gecko ? fmtUSD(l.gecko.usd_market_cap) : '—', `Market cap · ${geckoDesc}`, l.gecko?'ok':'bad'),
-    card('RSI 1H / 4H / 1D', `${fmtNum(l.rsi1,1)} · ${fmtNum(l.rsi4,1)} · ${fmtNum(l.rsiD,1)}`, 'RSI calculado no navegador via candles Binance', (l.rsi1<30||l.rsi4<30)?'warn':(l.dataOk?'ok':'bad')),
+    listCard('CoinGecko agregado', [
+      ['Market cap', l.gecko ? fmtUSD(l.gecko.usd_market_cap) : '—'],
+      ['24h', l.gecko ? fmtPct(l.gecko.usd_24h_change) : '—'],
+      ['Volume 24h', l.gecko ? fmtUSD(l.gecko.usd_24h_vol) : '—']
+    ], geckoUpdated, l.gecko?'ok':'bad'),
+    listCard('RSI 1H / 4H / 1D', [
+      ['RSI 1H', fmtNum(l.rsi1,1)],
+      ['RSI 4H', fmtNum(l.rsi4,1)],
+      ['RSI 1D', fmtNum(l.rsiD,1)]
+    ], 'RSI calculado no navegador via candles Binance', (l.rsi1<30||l.rsi4<30)?'warn':(l.dataOk?'ok':'bad')),
     card('Fear & Greed', l.fngValue!==null?`${l.fngValue} · ${l.fngClass}`:'—', 'Fonte: Alternative.me', l.fngValue!==null ? (l.fngValue<=30?'warn':'ok') : 'bad'),
     card('Funding Binance Futures', l.fundingRate!==null?`${fmtNum(l.fundingRate,4)}%`:'—', l.nextFunding?`próx.: ${shortDate(l.nextFunding)}`:'Fonte: Binance Futures', l.fundingRate!==null ? (l.fundingRate<=0?'warn':'ok') : 'bad'),
     card('Vela diária', l.dayRed===null?'—':(l.dayRed?'vermelha':'não vermelha'), `${fmtPct(l.dailyChange)} no candle diário em formação`, l.dayRed===null?'bad':(l.dayRed?'warn':'bad')),
     card('Distância EMA 21', fmtPct(l.emaDist), 'base 4H: preço vs EMA 21', l.emaDist===null?'bad':(l.emaDist<0?'warn':'ok')),
-    card('Volume relativo', l.volRatio?`${fmtNum(l.volRatio,2)}x média`:'—', `Período ativo: ${state.activeTf}`, l.volRatio!==null ? (l.volRatio>=1.25?'warn':'ok') : 'bad'),
+    card('Status do Volume 1H', l.vol1hRatio?`${fmtNum(l.vol1hRatio,2)}x · ${l.volumeStatus.label}`:'—', l.volumeStatus.detail, l.volumeStatus.className),
     card('Livro de ordens', l.depthModel.label, l.depthModel.detail, l.depthModel.label==='oferta pesada'?'bad':l.depthModel.label==='suporte visível'?'warn':(l.depthModel.label==='indisponível'?'bad':'ok'))
   ].join('');
   if(err) $('#liveCards').insertAdjacentHTML('beforeend', `<div class="live-card"><h4>Falhas de API <span class="bad">${err}</span></h4><strong>parcial</strong><p>${state.errors.slice(0,3).join(' · ')}</p></div>`);
@@ -174,6 +257,10 @@ function renderLiveCards(){
 }
 
 function card(title,value,desc,kind){ return `<div class="live-card"><h4>${title} <span class="${kind}">●</span></h4><strong>${value}</strong><p>${desc}</p></div>`; }
+function listCard(title, items, desc, kind){
+  const rows = items.map(([label, value]) => `<div class="metric-row"><b>${label}</b><span>${value}</span></div>`).join('');
+  return `<div class="live-card list-card"><h4>${title} <span class="${kind}">●</span></h4><div class="metric-list">${rows}</div><p>${desc}</p></div>`;
+}
 function renderSources(){
   const updated = state.lastUpdated ? shortDate(state.lastUpdated) : '—';
   $('#apiSources').innerHTML = ['Binance Spot: candles, ticker e book','Binance Futures: funding BTCUSDT','Alternative.me: Fear & Greed','CoinGecko: preço agregado, market cap e volume','Sem dados simulados no Radar',`Atualizado: ${updated}`].map(x=>`<span>${x}</span>`).join('');
@@ -193,7 +280,7 @@ function renderChecklist(){
     ['Afastamento EMA', l.emaDist<0, `Preço ${fmtPct(l.emaDist)} da EMA 21 no 4H`],
     ['Fear & Greed', l.criteria.fngLow, `${l.fngValue ?? '—'} · gatilho abaixo de 30`],
     ['Funding Binance Futures', l.criteria.fundingOk, `${fmtNum(l.fundingRate,4)}% · neutro/negativo ajuda`],
-    ['Volume', l.criteria.volumeStress, `${l.volRatio?fmtNum(l.volRatio,2)+'x média':'—'} · estresse > 1,25x`],
+    ['Volume 1H', l.criteria.volumeStress, `${l.vol1hRatio?fmtNum(l.vol1hRatio,2)+'x média':'—'} · ${l.volumeStatus?.label || '—'} · estresse > 1,5x`],
     ['Livro de Ordens', l.depthModel.label!=='oferta pesada', l.depthModel.detail]
   ];
   $('#checklistGrid').innerHTML = rows.map(([name,ok,detail])=>`<article class="check-item"><h4>${ok?'✅':'❌'} ${name}</h4><p>${detail}</p></article>`).join('');
@@ -218,24 +305,34 @@ function renderPriceChart(tf){
     {type:'scatter', mode:'lines', x, y:rows.map(r=>r.ema21), name:'EMA 21', line:{color:'#f5b544', width:2}},
     {type:'scatter', mode:'lines', x, y:rows.map(r=>r.ema50), name:'EMA 50', line:{color:'#52d8ff', width:2}}
   ];
-  const layout={...plotLayoutBase, xaxis:{...plotLayoutBase.xaxis, rangeslider:{visible:false}}, yaxis:{...plotLayoutBase.yaxis, tickprefix:'$'}};
+  const layout={...plotLayoutBase, margin:{...plotLayoutBase.margin,b:isMobileChart()?42:48}, xaxis:{...xAxisForTf(tf), rangeslider:{visible:false}}, yaxis:{...plotLayoutBase.yaxis, tickprefix:'$', nticks:isMobileChart()?4:5}};
+  renderPriceChartNote(tf, rows);
   Plotly.react('priceChart',data,layout,plotConfig);
 }
+function renderPriceChartNote(tf, rows){
+  const note = $('#priceChartNote'); if(!note || !rows.length) return;
+  const last = latest(rows);
+  const above21 = last.ema21 && last.close >= last.ema21;
+  const above50 = last.ema50 && last.close >= last.ema50;
+  const regime = above21 && above50 ? 'preço acima das EMAs 21/50: tendência curta favorece compradores.' : (!above21 && !above50 ? 'preço abaixo das EMAs 21/50: pressão curta segue defensiva.' : 'preço entre as EMAs: zona de transição, exige confirmação.');
+  note.innerHTML = `<b>Leitura rápida:</b> ${regime}`;
+}
+
 function renderRsiChart(tf){
   const rows=state.candles[tf]||[]; if(!rows.length || !window.Plotly){ renderEmptyChart('rsiChart','Sem RSI real disponível.'); return; }
   const x=rows.map(r=>new Date(r.time));
   const y=rows.map(r=>r.rsi);
   Plotly.react('rsiChart',[
-    {type:'scatter',mode:'lines',x,y,name:'RSI 14',line:{color:'#9a7cff',width:3}},
-    {type:'scatter',mode:'lines',x,y:rows.map(()=>30),name:'Sobrevenda',line:{color:'#40d99a',dash:'dot'}},
-    {type:'scatter',mode:'lines',x,y:rows.map(()=>70),name:'Sobrecompra',line:{color:'#ff5f7b',dash:'dot'}}
-  ],{...plotLayoutBase,yaxis:{...plotLayoutBase.yaxis,range:[0,100]}},plotConfig);
+    {type:'scatter',mode:'lines',x,y,name:'RSI 14',line:{color:'#9a7cff',width:3}, hovertemplate:'RSI %{y:.1f}<extra></extra>'},
+    {type:'scatter',mode:'lines',x,y:rows.map(()=>30),name:'Sobrevenda',line:{color:'#40d99a',dash:'dot'}, hoverinfo:'skip'},
+    {type:'scatter',mode:'lines',x,y:rows.map(()=>70),name:'Sobrecompra',line:{color:'#ff5f7b',dash:'dot'}, hoverinfo:'skip'}
+  ],{...plotLayoutBase, margin:{...plotLayoutBase.margin,b:isMobileChart()?38:44}, xaxis:xAxisForTf(tf), yaxis:{...plotLayoutBase.yaxis,range:[0,100],nticks:5}},plotConfig);
 }
 function renderVolumeChart(tf){
   const rows=state.candles[tf]||[]; if(!rows.length || !window.Plotly){ renderEmptyChart('volumeChart','Sem volume real disponível.'); return; }
   const x=rows.map(r=>new Date(r.time));
   const colors=rows.map(r=>r.close>=r.open?'#40d99a':'#ff5f7b');
-  Plotly.react('volumeChart',[{type:'bar',x,y:rows.map(r=>r.volume),marker:{color:colors},name:'Volume'}],plotLayoutBase,plotConfig);
+  Plotly.react('volumeChart',[{type:'bar',x,y:rows.map(r=>r.volume),marker:{color:colors},name:'Volume',hovertemplate:'Volume %{y:,.0f}<extra></extra>'}],{...plotLayoutBase, margin:{...plotLayoutBase.margin,b:isMobileChart()?38:44}, xaxis:xAxisForTf(tf), yaxis:{...plotLayoutBase.yaxis,nticks:isMobileChart()?3:4}},plotConfig);
 }
 function renderCycleCharts(){
   if(!window.Plotly) return; const rows=BTC_STATIC.cycleRows;
@@ -346,9 +443,19 @@ function saveDecision(){
 }
 function copyVerdict(){
   const l=state.live; if(!l){toast('Dados ainda não carregados.');return;}
-  const text=`${l.verdict}\nPreço: ${fmtUSD(l.price)} (${fmtPct(l.ch24)} 24h)\nRSI 1H/4H/1D: ${fmtNum(l.rsi1,1)} / ${fmtNum(l.rsi4,1)} / ${fmtNum(l.rsiD,1)}\nFear & Greed: ${l.fngValue ?? '—'} ${l.fngClass}\nFunding Binance Futures: ${fmtNum(l.fundingRate,4)}%\nScore: ${l.dataOk ? `${l.score}/${l.scoreMax}` : 'dados indisponíveis'}\nAção: ${l.action}\nO que falta: ${l.missing.length?l.missing.join(', '):'nenhum gatilho principal'}`;
+  const text=`${l.verdict}\nPreço: ${fmtUSD(l.price)} (${fmtPct(l.ch24)} 24h)\nRSI 1H/4H/1D: ${fmtNum(l.rsi1,1)} / ${fmtNum(l.rsi4,1)} / ${fmtNum(l.rsiD,1)}\nFear & Greed: ${l.fngValue ?? '—'} ${l.fngClass}\nFunding Binance Futures: ${fmtNum(l.fundingRate,4)}%\nVolume 1H: ${l.vol1hRatio?fmtNum(l.vol1hRatio,2)+'x · '+l.volumeStatus.label:'—'}\nScore: ${l.dataOk ? `${l.score}/${l.scoreMax}` : 'dados indisponíveis'}\nAção: ${l.action}\nO que falta: ${l.missing.length?l.missing.join(', '):'nenhum gatilho principal'}`;
   navigator.clipboard?.writeText(text); toast('Veredito copiado.');
 }
+
+async function refreshArea(btn){
+  const area = btn?.dataset?.area || 'esta área';
+  const original = btn?.textContent || 'Atualizar área';
+  if(btn){ btn.disabled = true; btn.textContent = 'Atualizando...'; }
+  toast(`Atualizando ${area.toLowerCase()}...`);
+  try{ await loadLiveData(); toast(`${area} atualizado.`); }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = original; } }
+}
+
 function setupNav(){
   $('#navToggle')?.addEventListener('click',()=>{ const sb=$('#sidebar'); sb.classList.toggle('open'); $('#navToggle').setAttribute('aria-expanded',sb.classList.contains('open')); });
   $$('.nav-link').forEach(a=>a.addEventListener('click',()=>$('#sidebar')?.classList.remove('open')));
@@ -356,8 +463,10 @@ function setupNav(){
   $$('.observe').forEach(s=>obs.observe(s));
 }
 function setupEvents(){
-  $('#refreshLive').addEventListener('click',()=>{toast('Atualizando APIs...'); loadLiveData();});
+  $('#refreshLive').addEventListener('click',()=>{toast('Atualizando todas as áreas dinâmicas...'); loadLiveData();});
+  $$('.area-refresh').forEach(btn=>btn.addEventListener('click',()=>refreshArea(btn)));
   $('#copyVerdict').addEventListener('click',copyVerdict);
+  $('#toggleCompact')?.addEventListener('click',()=>setCompactMode(!document.body.classList.contains('compact-mode')));
   $$('#tfTabs .tf').forEach(btn=>btn.addEventListener('click',()=>{ $$('#tfTabs .tf').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); state.activeTf=btn.dataset.tf; renderAllLive(); }));
   $('#findDate').addEventListener('click',()=>findDate($('#dateSearch').value));
   ['calcPrice','calcSupply'].forEach(id=>$('#'+id)?.addEventListener('input',e=>{ e.target.dataset.touched='1'; calculateMarketCap(); }));
@@ -365,6 +474,6 @@ function setupEvents(){
   $('#saveDecision').addEventListener('click',saveDecision);
   $('#clearDecisions').addEventListener('click',()=>{localStorage.removeItem('btcDecisions');renderDecisionList();toast('Diário limpo.');});
 }
-function init(){ setupNav(); setupEvents(); renderPatterns(); renderGlossary(); renderDatePresets(); renderDecisionList(); renderCycleCharts(); loadLiveData(); setTimeout(renderCycleCharts,500); }
+function init(){ setupNav(); setupEvents(); setCompactMode(localStorage.getItem('btcCompactMode')==='1'); renderPatterns(); renderGlossary(); renderDatePresets(); renderDecisionList(); renderCycleCharts(); loadLiveData(); setTimeout(renderCycleCharts,500); }
 window.addEventListener('DOMContentLoaded', init);
 window.addEventListener('resize',()=>{ if(window.Plotly){ ['priceChart','rsiChart','volumeChart','bullDurationChart','bearDurationChart','drawdownChart','halvingChart','logForceChart','macroCurveChart'].forEach(id=>{ const el=document.getElementById(id); if(el) Plotly.Plots.resize(el); }); }});

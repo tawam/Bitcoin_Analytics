@@ -21,13 +21,17 @@ Arquivos essenciais:
 
 ## Observação
 
-O site usa APIs públicas sem chave. Se alguma fonte bloquear CORS, rate limit ou ficar indisponível, o radar marca o dado como parcial e mantém apoio visual.
+O site usa APIs públicas sem chave. Se alguma fonte bloquear CORS, rate limit ou ficar indisponível, o radar marca o dado como parcial e mantém fallback visual.
 
+## v3.4 — Radar tático e mobile
 
-## v3.1
+Esta versão adiciona um painel tático de leitura rápida dentro do Radar Anti-FOMO:
 
-- Radar não usa candles simulados: se dados essenciais falham, o sinal é bloqueado.
-- Funding identificado como Binance Futures, não global.
-- CoinGecko aparece como visão agregada de market cap e volume.
-- Busca por data tenta consultar candles históricos na Binance quando a data não está na janela carregada.
-- Gráficos reforçados para mobile sem zoom/pan acidental.
+- tabela compacta com Preço, RSI 1H/4H, Fear & Greed, Funding e Volume 1H;
+- Semáforo Anti-FOMO com estados vermelho, amarelo, verde e cinza;
+- botão "Modo texto" para leitura ultracompacta no celular;
+- atalhos diretos para Binance Spot, Binance Futures, Coinbase e CoinEx;
+- alerta de volume 1H comparado à média recente;
+- correção dos cards do tutorial para evitar colunas estreitas e quebras estranhas.
+
+O site continua mantendo o tutorial completo, gráficos e áreas de ciclo. O modo texto apenas oculta partes pesadas quando ativado pelo usuário.

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Bitcoin Analytics Lab | Tutorial + Radar Anti-FOMO</title>
+  <title>Bitcoin Analytics Lab | Tutorial + Radar Anti-FOMO v3.4</title>
   <meta name="description" content="Site pessoal para estudar ciclos do Bitcoin, análise técnica, on-chain, derivativos e radar anti-FOMO com dados automáticos." />
   <meta name="theme-color" content="#070a12" />
   <meta property="og:title" content="Bitcoin Analytics Lab" />
@@ -35,7 +35,7 @@
         <div class="brand-mark">₿</div>
         <div>
           <strong>Bitcoin Analytics Lab</strong>
-          <span>Tutorial + Radar Anti-FOMO</span>
+          <span>Tutorial + Radar Tático</span>
         </div>
       </div>
 
@@ -113,11 +113,13 @@
           </div>
           <div class="button-row">
             <button class="primary-btn small" id="refreshLive">Atualizar dados</button>
+            <button class="ghost-btn small" id="toggleCompact">Modo texto</button>
             <button class="ghost-btn small" id="copyVerdict">Copiar veredito</button>
           </div>
         </div>
 
         <div class="anchor-row sticky-subnav" aria-label="Subnavegação do radar">
+          <a href="#tatico">Painel tático</a>
           <a href="#liveHub">Dados ao vivo</a>
           <a href="#marketCapRadar">Market cap</a>
           <a href="#veredito">Veredito</a>
@@ -130,10 +132,54 @@
           <b>Como ler:</b> sinal verde exige queda diária + RSI curto estressado + medo global. Se o site falhar ao puxar alguma API, ele marca o dado como indisponível e não força conclusão.
         </div>
 
+        <div class="section-block tactical-block" id="tatico">
+          <div class="block-title">
+            <div><span>00</span><h3>Painel tático de leitura rápida</h3></div>
+            <div class="block-actions">
+              <p>Modo texto para celular e decisão rápida: números essenciais, sem gráfico pesado. Use como filtro Anti-FOMO, não como promessa de fundo.</p>
+              <button class="ghost-btn small area-refresh" data-area="Painel tático">Atualizar área</button>
+            </div>
+          </div>
+
+          <div class="tactical-grid">
+            <div class="traffic-card" id="trafficCard">
+              <div class="traffic-light red" id="trafficLight" aria-label="Semáforo Anti-FOMO"></div>
+              <div>
+                <small>Semáforo Anti-FOMO</small>
+                <h3 id="trafficTitle">Aguardando dados...</h3>
+                <p id="trafficText">O sinal cruza RSI curto, Fear & Greed, vela diária, funding e volume. Verde indica janela da regra pessoal, não garantia de alta.</p>
+              </div>
+            </div>
+
+            <div class="tactical-table-wrap">
+              <table class="tactical-table" aria-label="Painel tático com dados ao vivo">
+                <tbody id="tacticalRows">
+                  <tr><th>Preço</th><td>—</td><td>aguardando</td></tr>
+                  <tr><th>RSI 1H / 4H</th><td>—</td><td>aguardando</td></tr>
+                  <tr><th>Fear & Greed</th><td>—</td><td>aguardando</td></tr>
+                  <tr><th>Funding</th><td>—</td><td>aguardando</td></tr>
+                  <tr><th>Volume 1H</th><td>—</td><td>aguardando</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="quick-links" aria-label="Atalhos de liquidez">
+            <a target="_blank" rel="noopener" href="https://www.binance.com/en/trade/BTC_USDT?type=spot">Binance Spot</a>
+            <a target="_blank" rel="noopener" href="https://www.binance.com/en/futures/BTCUSDT">Binance Futures</a>
+            <a target="_blank" rel="noopener" href="https://www.coinbase.com/advanced-trade/spot/BTC-USD">Coinbase BTC/USD</a>
+            <a target="_blank" rel="noopener" href="https://www.coinex.com/en/exchange/btc-usdt">CoinEx BTC/USDT</a>
+          </div>
+          <p class="fine-note">Atalhos abrem a tela de mercado/liquidez visível nas corretoras. Livro de ordens mostra ordens abertas, não prova identidade institucional.</p>
+        </div>
+
         <div class="section-block" id="liveHub">
           <div class="block-title">
             <div><span>01</span><h3>Hub de dados ao vivo</h3></div>
-            <p>Todos os dados automáticos ficam aqui para facilitar auditoria: fonte, horário da leitura e status.</p>
+            <div class="block-actions">
+              <p>Todos os dados automáticos ficam aqui para facilitar auditoria: fonte, horário da leitura e status.</p>
+              <button class="ghost-btn small area-refresh" data-area="Hub de dados ao vivo">Atualizar área</button>
+            </div>
           </div>
           <div class="live-grid" id="liveCards">
             <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
@@ -144,7 +190,10 @@
         <div class="section-block" id="marketCapRadar">
           <div class="block-title">
             <div><span>02</span><h3>Market cap e preço agregado</h3></div>
-            <p>O preço da Binance serve para o gráfico operacional. O CoinGecko entra como visão agregada de mercado: market cap, volume e variação 24h.</p>
+            <div class="block-actions">
+              <p>O preço da Binance serve para o gráfico operacional. O CoinGecko entra como visão agregada de mercado: market cap, volume e variação 24h.</p>
+              <button class="ghost-btn small area-refresh" data-area="Market cap">Atualizar área</button>
+            </div>
           </div>
           <div class="result-box" id="marketSnapshot">Aguardando CoinGecko...</div>
           <div class="calc-grid">
@@ -161,7 +210,10 @@
         <div class="section-block" id="veredito">
           <div class="block-title">
             <div><span>03</span><h3>Veredito mecânico</h3></div>
-            <p>Critérios visuais e objetivos. O site mostra o que falta, em vez de inventar convicção.</p>
+            <div class="block-actions">
+              <p>Critérios visuais e objetivos. O site mostra o que falta, em vez de inventar convicção.</p>
+              <button class="ghost-btn small area-refresh" data-area="Veredito mecânico">Atualizar área</button>
+            </div>
           </div>
           <div class="verdict-panel" id="verdictPanel">
             <div class="verdict-main"><span>⏳</span><div><h3>Carregando dados...</h3><p>Aguardando leitura das APIs públicas.</p></div></div>
@@ -172,7 +224,10 @@
         <div class="section-block" id="graficosRadar">
           <div class="block-title">
             <div><span>04</span><h3>Gráficos do radar</h3></div>
-            <p>Sem zoom por toque. Use os botões para trocar o período e os presets para localizar datas relevantes.</p>
+            <div class="block-actions">
+              <p>Sem zoom por toque. Use os botões para trocar o período e os presets para localizar datas relevantes.</p>
+              <button class="ghost-btn small area-refresh" data-area="Gráficos do radar">Atualizar área</button>
+            </div>
           </div>
           <div class="timeframe-tabs" id="tfTabs">
             <button class="tf active" data-tf="1h">1H</button>
