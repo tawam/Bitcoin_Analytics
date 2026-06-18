@@ -25,14 +25,14 @@ const plotLayoutBase = {
 };
 
 function isMobileChart(){ return window.matchMedia('(max-width:640px)').matches; }
-function formatTickLabel(date, tf, mobile=isMobileChart()){
+function formatTickLabel(date, tf, mobile=isMobileChart(), spanMs=0){
   const d = new Date(date);
-  if(tf === '1h') return mobile
-    ? d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
-    : d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  if(tf === '4h') return mobile
-    ? d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
-    : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+  // 1H normalmente carrega vários dias. Mostrar só horas confunde; a hora completa fica no hover.
+  if(tf === '1h'){
+    if(spanMs > 48*60*60*1000) return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  }
+  if(tf === '4h') return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
   return mobile
     ? d.toLocaleDateString('pt-BR',{month:'short'})
     : d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
@@ -40,24 +40,40 @@ function formatTickLabel(date, tf, mobile=isMobileChart()){
 function buildDateAxis(rows, tf){
   const mobile = isMobileChart();
   const count = rows?.length || 0;
-  const tickCount = mobile ? (tf==='1d' ? 4 : 5) : (tf==='1d' ? 6 : 7);
-  const step = Math.max(1, Math.floor((count - 1) / Math.max(1, tickCount - 1)));
-  const vals = [];
-  for(let i=0;i<count;i+=step) vals.push(new Date(rows[i].time));
-  if(count && vals.length && +vals[vals.length-1] !== +new Date(rows[count-1].time)) vals.push(new Date(rows[count-1].time));
-  const uniqueVals = vals.filter((v,i,a)=>i===0 || +v !== +a[i-1]);
-  const ticktext = uniqueVals.map(v => formatTickLabel(v, tf, mobile));
+  if(!count) return {...plotLayoutBase.xaxis, type:'date'};
+
+  const first = rows[0].time;
+  const last = rows[count - 1].time;
+  const spanMs = Math.max(0, last - first);
+  const targetTicks = mobile ? (tf === '1d' ? 4 : 5) : (tf === '1d' ? 6 : 6);
+  const actualTicks = Math.min(targetTicks, count);
+  const indexes = [];
+
+  if(actualTicks <= 1){
+    indexes.push(0);
+  }else{
+    for(let i = 0; i < actualTicks; i++){
+      indexes.push(Math.round(i * (count - 1) / (actualTicks - 1)));
+    }
+  }
+
+  const uniqueIndexes = [...new Set(indexes)].sort((a,b)=>a-b);
+  const tickvals = uniqueIndexes.map(i => new Date(rows[i].time));
+  const ticktext = tickvals.map(v => formatTickLabel(v, tf, mobile, spanMs));
+
   return {
     ...plotLayoutBase.xaxis,
     type:'date',
     tickmode:'array',
-    tickvals: uniqueVals,
+    tickvals,
     ticktext,
     tickangle:0,
     automargin:true,
-    hoverformat: tf==='1d' ? '%d/%m/%Y' : '%d/%m/%Y %H:%M'
+    ticklabeloverflow:'hide past div',
+    hoverformat: tf === '1d' ? '%d/%m/%Y' : '%d/%m/%Y %H:%M'
   };
 }
+
 
 function toast(msg){ const el=$('#toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
 function fmtUSD(v){ if(v===null||v===undefined||isNaN(v)) return '—'; return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:v>1000?0:2}).format(v); }
@@ -178,6 +194,7 @@ function buildLiveModel({ticker, depth, funding, fng, cg}){
   if(!dataOk) missing.push(...essentialMissing);
   if(dataOk && !criteria.dayRed) missing.push('vela diária vermelha');
   if(dataOk && !criteria.rsiShort) missing.push('RSI 1H ou 4H abaixo de 30');
+  if(dataOk && !criteria.rsiDContext) missing.push('RSI diário abaixo de 45');
   if(dataOk && !criteria.fngLow) missing.push('Fear & Greed abaixo de 30');
   if(dataOk && !criteria.fundingOk) missing.push('funding neutro/negativo');
   if(dataOk && !criteria.volumeStress) missing.push('volume acima da média');
@@ -247,7 +264,7 @@ function renderTacticalPanel(){
     tacticalRead('Fear & Greed', l.fngValue!==null?`${l.fngValue} · ${l.fngClass}`:'—', fngRead, l.criteria.fngLow?'warn':''),
     tacticalRead('Funding', l.fundingRate!==null?`${fmtNum(l.fundingRate,4)}%`:'—', fundingRead, l.criteria.fundingOk?'ok':''),
     tacticalRead('Volume 1H', l.vol1hRatio?`${fmtNum(l.vol1hRatio,2)}x média`:'—', l.volumeStatus.label, l.volumeStatus.className),
-    tacticalRead('Semáforo', title, l.dataOk ? `${l.score}/${l.scoreMax} critérios` : 'bloqueado', trafficClass==='green'?'ok':trafficClass==='yellow'?'warn':'bad')
+    tacticalRead('Semáforo', title, l.dataOk ? `${l.score}/${l.scoreMax} score · ${auxiliaryScore(l).score}/2 apoio` : 'bloqueado', trafficClass==='green'?'ok':trafficClass==='yellow'?'warn':'bad')
   ].join('');
 }
 function setCompactMode(enabled){
@@ -289,29 +306,51 @@ function listCard(title, items, desc, kind){
   const rows = items.map(([label, value]) => `<div class="metric-row"><b>${label}</b><span>${value}</span></div>`).join('');
   return `<div class="live-card list-card"><h4>${title} <span class="${kind}">●</span></h4><div class="metric-list">${rows}</div><p>${desc}</p></div>`;
 }
+
+function auxiliaryScore(l){
+  if(!l) return {score:0,max:2,items:{ema:false,book:false}};
+  const ema = l.emaDist!==null && Number.isFinite(l.emaDist) && l.emaDist < 0;
+  const book = l.depthModel && l.depthModel.label !== 'oferta pesada' && l.depthModel.label !== 'indisponível';
+  return {score:[ema,book].filter(Boolean).length,max:2,items:{ema,book}};
+}
+function checkItem(name, ok, detail, tag='Score'){
+  return `<article class="check-item ${tag==='Apoio'?'aux-check':''}"><h4>${ok?'✅':'❌'} ${name}</h4><p><span class="check-tag">${tag}</span>${detail}</p></article>`;
+}
+
 function renderSources(){
   const updated = state.lastUpdated ? shortDate(state.lastUpdated) : '—';
   $('#apiSources').innerHTML = ['Binance Spot: candles, ticker e book','Binance Futures: funding BTCUSDT','Alternative.me: Fear & Greed','CoinGecko: preço agregado, market cap e volume','Sem dados simulados no Radar',`Atualizado: ${updated}`].map(x=>`<span>${x}</span>`).join('');
 }
 function renderVerdict(){
   const l=state.live; const icon=l.level==='green'?'✅':l.level==='yellow'?'🟡':l.level==='gray'?'⚠️':'🛑';
-  $('#verdictPanel').innerHTML = `<div class="verdict-main"><span>${icon}</span><div><h3>${l.verdict}</h3><p>${l.action}</p><p><b>Score:</b> ${l.dataOk ? `${l.score}/${l.scoreMax} critérios principais` : 'bloqueado por dados essenciais indisponíveis'}.</p><p><b>O que falta:</b> ${l.missing.length?l.missing.join(', '):'todos os gatilhos principais foram atendidos'}.</p><p><b>Sazonalidade:</b> ${dayLabel()} · ${liquidityNote()}.</p></div></div>`;
+  const aux = auxiliaryScore(l);
+  const scoreText = l.dataOk ? `${l.score}/${l.scoreMax} critérios principais · ${aux.score}/${aux.max} sinais auxiliares` : 'bloqueado por dados essenciais indisponíveis';
+  const missingText = l.missing.length ? l.missing.join(', ') : 'todos os critérios principais foram atendidos';
+  $('#verdictPanel').innerHTML = `<div class="verdict-main"><span>${icon}</span><div><h3>${l.verdict}</h3><p>${l.action}</p><p><b>Score tático:</b> ${scoreText}.</p><p><b>Critérios principais que faltam:</b> ${missingText}.</p><p><b>Como ler:</b> os 6 critérios principais contam no score. EMA e livro de ordens são sinais auxiliares de contexto.</p><p><b>Sazonalidade:</b> ${dayLabel()} · ${liquidityNote()}.</p></div></div>`;
 }
 
 function liquidityNote(){ const d=new Date().getDay(); return (d===0||d===6)?'fim de semana tende a ter liquidez mais irregular':'dia útil tende a ter mais liquidez institucional'; }
 function renderChecklist(){
   const l=state.live;
-  const rows = [
-    ['Ação do Preço 1D', l.dayRed, `${l.dayRed?'Vela vermelha':'Sem vela vermelha'} · ${fmtPct(l.dailyChange)}`],
+  const aux = auxiliaryScore(l);
+  const primaryRows = [
+    ['Ação do Preço 1D', l.criteria.dayRed, `${l.dayRed?'Vela vermelha':'Sem vela vermelha'} · ${fmtPct(l.dailyChange)}`],
     ['RSI 1H / 4H', l.criteria.rsiShort, `1H ${fmtNum(l.rsi1,1)} · 4H ${fmtNum(l.rsi4,1)} · gatilho < 30`],
-    ['RSI Diário', l.rsiD<45, `1D ${fmtNum(l.rsiD,1)} · contexto de correção abaixo de 45`],
-    ['Afastamento EMA', l.emaDist<0, `Preço ${fmtPct(l.emaDist)} da EMA 21 no 4H`],
+    ['RSI Diário', l.criteria.rsiDContext, `1D ${fmtNum(l.rsiD,1)} · contexto de correção abaixo de 45`],
     ['Fear & Greed', l.criteria.fngLow, `${l.fngValue ?? '—'} · gatilho abaixo de 30`],
-    ['Funding Binance Futures', l.criteria.fundingOk, `${fmtNum(l.fundingRate,4)}% · neutro/negativo ajuda`],
-    ['Volume 1H', l.criteria.volumeStress, `${l.vol1hRatio?fmtNum(l.vol1hRatio,2)+'x média':'—'} · ${l.volumeStatus?.label || '—'} · estresse > 1,5x`],
-    ['Livro de Ordens', l.depthModel.label!=='oferta pesada', l.depthModel.detail]
+    ['Funding Binance Futures', l.criteria.fundingOk, `${fmtNum(l.fundingRate,4)}% · neutro/baixo ajuda`],
+    ['Volume 1H', l.criteria.volumeStress, `${l.vol1hRatio?fmtNum(l.vol1hRatio,2)+'x média':'—'} · ${l.volumeStatus?.label || '—'} · estresse > 1,5x`]
   ];
-  $('#checklistGrid').innerHTML = rows.map(([name,ok,detail])=>`<article class="check-item"><h4>${ok?'✅':'❌'} ${name}</h4><p>${detail}</p></article>`).join('');
+  const auxRows = [
+    ['Afastamento EMA', aux.items.ema, `Preço ${fmtPct(l.emaDist)} da EMA 21 no 4H`],
+    ['Livro de Ordens', aux.items.book, `${l.depthModel.detail} · apoio visual, não entra no score`]
+  ];
+  $('#checklistGrid').innerHTML = `
+    <div class="checklist-section-title">Critérios principais — contam no score ${l.score}/${l.scoreMax}</div>
+    ${primaryRows.map(([name,ok,detail])=>checkItem(name,ok,detail,'Score')).join('')}
+    <div class="checklist-section-title aux-title">Sinais auxiliares — contexto, não liberam aporte sozinhos ${aux.score}/${aux.max}</div>
+    ${auxRows.map(([name,ok,detail])=>checkItem(name,ok,detail,'Apoio')).join('')}
+  `;
 }
 
 
@@ -479,7 +518,7 @@ function saveDecision(){
 }
 function copyVerdict(){
   const l=state.live; if(!l){toast('Dados ainda não carregados.');return;}
-  const text=`${l.verdict}\nPreço: ${fmtUSD(l.price)} (${fmtPct(l.ch24)} 24h)\nRSI 1H/4H/1D: ${fmtNum(l.rsi1,1)} / ${fmtNum(l.rsi4,1)} / ${fmtNum(l.rsiD,1)}\nFear & Greed: ${l.fngValue ?? '—'} ${l.fngClass}\nFunding Binance Futures: ${fmtNum(l.fundingRate,4)}%\nVolume 1H: ${l.vol1hRatio?fmtNum(l.vol1hRatio,2)+'x · '+l.volumeStatus.label:'—'}\nScore: ${l.dataOk ? `${l.score}/${l.scoreMax}` : 'dados indisponíveis'}\nAção: ${l.action}\nO que falta: ${l.missing.length?l.missing.join(', '):'nenhum gatilho principal'}`;
+  const text=`${l.verdict}\nPreço: ${fmtUSD(l.price)} (${fmtPct(l.ch24)} 24h)\nRSI 1H/4H/1D: ${fmtNum(l.rsi1,1)} / ${fmtNum(l.rsi4,1)} / ${fmtNum(l.rsiD,1)}\nFear & Greed: ${l.fngValue ?? '—'} ${l.fngClass}\nFunding Binance Futures: ${fmtNum(l.fundingRate,4)}%\nVolume 1H: ${l.vol1hRatio?fmtNum(l.vol1hRatio,2)+'x · '+l.volumeStatus.label:'—'}\nScore: ${l.dataOk ? `${l.score}/${l.scoreMax} principais · ${auxiliaryScore(l).score}/2 auxiliares` : 'dados indisponíveis'}\nAção: ${l.action}\nO que falta: ${l.missing.length?l.missing.join(', '):'nenhum gatilho principal'}`;
   navigator.clipboard?.writeText(text); toast('Veredito copiado.');
 }
 
