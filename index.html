@@ -113,11 +113,13 @@
           </div>
           <div class="button-row">
             <button class="primary-btn small" id="refreshLive">Atualizar dados</button>
+            <button class="ghost-btn small" id="toggleCompact">Modo texto</button>
             <button class="ghost-btn small" id="copyVerdict">Copiar veredito</button>
           </div>
         </div>
 
         <div class="anchor-row sticky-subnav" aria-label="Subnavegação do radar">
+          <a href="#painelTatico">Painel tático</a>
           <a href="#liveHub">Dados ao vivo</a>
           <a href="#marketCapRadar">Market cap</a>
           <a href="#veredito">Veredito</a>
@@ -130,10 +132,43 @@
           <b>Como ler:</b> sinal verde exige queda diária + RSI curto estressado + medo global. Se o site falhar ao puxar alguma API, ele marca o dado como indisponível e não força conclusão.
         </div>
 
+        <div class="section-block tactical-block" id="painelTatico">
+          <div class="block-title">
+            <div><span>00</span><h3>Painel tático rápido</h3></div>
+            <div class="block-actions">
+              <p>Leitura compacta para celular e desktop: preço, RSI, sentimento, funding, volume e semáforo anti-FOMO.</p>
+              <button class="ghost-btn small area-refresh" data-area="Painel tático">Atualizar área</button>
+            </div>
+          </div>
+          <div class="tactical-grid">
+            <div class="traffic-card">
+              <div class="traffic-light gray" id="trafficLight" aria-hidden="true"></div>
+              <div>
+                <small>Semáforo Anti-FOMO</small>
+                <h3 id="trafficTitle">Aguardando dados</h3>
+                <p id="trafficText">O site ainda está cruzando RSI, sentimento e contexto do mercado.</p>
+              </div>
+            </div>
+            <div class="tactical-table-wrap">
+              <table class="tactical-table">
+                <tbody id="tacticalRows">
+                  <tr><th>Status</th><td>—</td><td>aguardando APIs</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="quick-links" aria-label="Atalhos de liquidez">
+            <a href="https://www.binance.com/en/trade/BTC_USDT" target="_blank" rel="noopener">Binance Spot</a>
+            <a href="https://www.binance.com/en/futures/BTCUSDT" target="_blank" rel="noopener">Binance Futures</a>
+            <a href="https://www.coinbase.com/advanced-trade/spot/BTC-USD" target="_blank" rel="noopener">Coinbase BTC/USD</a>
+            <a href="https://www.coinex.com/en/exchange/btc-usdt" target="_blank" rel="noopener">CoinEx BTC/USDT</a>
+          </div>
+        </div>
+
         <div class="section-block" id="liveHub">
           <div class="block-title">
             <div><span>01</span><h3>Hub de dados ao vivo</h3></div>
-            <p>Todos os dados automáticos ficam aqui para facilitar auditoria: fonte, horário da leitura e status.</p>
+            <div class="block-actions"><p>Todos os dados automáticos ficam aqui para facilitar auditoria: fonte, horário da leitura e status.</p><button class="ghost-btn small area-refresh" data-area="Hub de dados ao vivo">Atualizar área</button></div>
           </div>
           <div class="live-grid" id="liveCards">
             <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
@@ -144,7 +179,7 @@
         <div class="section-block" id="marketCapRadar">
           <div class="block-title">
             <div><span>02</span><h3>Market cap e preço agregado</h3></div>
-            <p>O preço da Binance serve para o gráfico operacional. O CoinGecko entra como visão agregada de mercado: market cap, volume e variação 24h.</p>
+            <div class="block-actions"><p>O preço da Binance serve para o gráfico operacional. O CoinGecko entra como visão agregada de mercado: market cap, volume e variação 24h.</p><button class="ghost-btn small area-refresh" data-area="Market cap">Atualizar área</button></div>
           </div>
           <div class="result-box" id="marketSnapshot">Aguardando CoinGecko...</div>
           <div class="calc-grid">
@@ -161,7 +196,7 @@
         <div class="section-block" id="veredito">
           <div class="block-title">
             <div><span>03</span><h3>Veredito mecânico</h3></div>
-            <p>Critérios visuais e objetivos. O site mostra o que falta, em vez de inventar convicção.</p>
+            <div class="block-actions"><p>Critérios visuais e objetivos. O site mostra o que falta, em vez de inventar convicção.</p><button class="ghost-btn small area-refresh" data-area="Veredito mecânico">Atualizar área</button></div>
           </div>
           <div class="verdict-panel" id="verdictPanel">
             <div class="verdict-main"><span>⏳</span><div><h3>Carregando dados...</h3><p>Aguardando leitura das APIs públicas.</p></div></div>
@@ -172,7 +207,7 @@
         <div class="section-block" id="graficosRadar">
           <div class="block-title">
             <div><span>04</span><h3>Gráficos do radar</h3></div>
-            <p>Sem zoom por toque. Use os botões para trocar o período e os presets para localizar datas relevantes.</p>
+            <div class="block-actions"><p>Sem zoom por toque. Use os botões para trocar o período e os presets para localizar datas relevantes.</p><button class="ghost-btn small area-refresh" data-area="Gráficos do radar">Atualizar área</button></div>
           </div>
           <div class="timeframe-tabs" id="tfTabs">
             <button class="tf active" data-tf="1h">1H</button>
@@ -180,7 +215,7 @@
             <button class="tf" data-tf="1d">1D</button>
           </div>
           <div class="chart-stack">
-            <div class="chart-card"><div class="chart-title"><strong>Preço + EMA 21/50</strong><span id="priceChartLabel">BTCUSDT · 1H</span></div><div id="priceChart" class="chart"></div></div>
+            <div class="chart-card chart-card-featured"><div class="chart-title"><strong>Preço + EMA 21/50</strong><span id="priceChartLabel">BTCUSDT · 1H</span></div><div class="chart-legend"><span><i class="dot green"></i>alta</span><span><i class="dot red"></i>baixa</span><span><i class="line gold"></i>EMA 21</span><span><i class="line cyan"></i>EMA 50</span></div><div id="priceChart" class="chart"></div><div class="chart-note" id="priceChartNote">Aguardando candles reais para gerar leitura rápida.</div></div>
             <div class="chart-card"><div class="chart-title"><strong>RSI 14</strong><span>zonas 30/70</span></div><div id="rsiChart" class="chart small-chart"></div></div>
             <div class="chart-card"><div class="chart-title"><strong>Volume</strong><span>comparado à média recente</span></div><div id="volumeChart" class="chart small-chart"></div></div>
           </div>
@@ -189,7 +224,7 @@
         <div class="section-block" id="buscaData">
           <div class="block-title">
             <div><span>05</span><h3>Busca por data e presets</h3></div>
-            <p>Escolha uma data. Se ela estiver fora da janela carregada, o site tenta buscar o candle histórico diretamente na Binance.</p>
+            <div class="block-actions"><p>Escolha uma data. Se ela estiver fora da janela carregada, o site tenta buscar o candle histórico diretamente na Binance.</p><button class="ghost-btn small area-refresh" data-area="Busca por data">Atualizar área</button></div>
           </div>
           <div class="date-tools">
             <label>Pesquisar data

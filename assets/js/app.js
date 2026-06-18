@@ -209,9 +209,11 @@ function tacticalRead(label, value, detail, okClass=''){
   return `<tr><th>${label}</th><td>${value}</td><td class="${okClass}">${detail}</td></tr>`;
 }
 function renderTacticalPanel(){
+  const rowsEl = $('#tacticalRows');
+  if(!rowsEl) return;
   const l=state.live;
   if(!l){
-    $('#tacticalRows').innerHTML = tacticalRead('Status','—','aguardando APIs');
+    rowsEl.innerHTML = tacticalRead('Status','—','aguardando APIs');
     return;
   }
   let trafficClass = 'red';
@@ -239,7 +241,7 @@ function renderTacticalPanel(){
   const rsiRead = l.criteria.rsiShort ? 'gatilho ativo < 30' : 'sem sobrevenda curta';
   const fngRead = l.fngValue!==null ? (l.fngValue<=10?'pânico extremo':l.fngValue<=20?'medo extremo':l.fngValue<=30?'medo':'sem medo tático') : 'indisponível';
   const fundingRead = l.fundingRate!==null ? (l.fundingRate<=0?'neutro/negativo':'positivo') : 'indisponível';
-  $('#tacticalRows').innerHTML = [
+  rowsEl.innerHTML = [
     tacticalRead('Preço atual', fmtUSD(l.price), `${fmtPct(l.ch24)} 24h`, l.ch24<0?'warn':'ok'),
     tacticalRead('RSI 1H / 4H', rsiShortVal, rsiRead, l.criteria.rsiShort?'warn':''),
     tacticalRead('Fear & Greed', l.fngValue!==null?`${l.fngValue} · ${l.fngClass}`:'—', fngRead, l.criteria.fngLow?'warn':''),
