@@ -1,26 +1,20 @@
-# Fontes e método
+# Fontes usadas pelo site
 
-## Método geral
+## Dados ao vivo
 
-A base principal para o ATH atual é Binance BTC/USDT. Agregadores e imprensa entram como checagem de divergência entre fontes. A análise de ciclo usa datas macro, não precisão cirúrgica de wick.
+- Binance Spot API — candles, ticker 24h e livro de ordens.
+- Binance USD-M Futures API — funding/premium index.
+- Alternative.me — Crypto Fear & Greed Index.
+- CoinGecko API — preço agregado e market cap como referência/apoio.
 
-## Fontes principais
+## Dados estáticos de ciclo
 
-- Binance Bitcoin Price: https://www.binance.com/en/price/bitcoin
-- CoinGecko Bitcoin: https://www.coingecko.com/en/coins/bitcoin
-- Reuters, Bitcoin hits all-time high above $125,000: https://www.reuters.com/world/asia-pacific/bitcoin-hits-all-time-high-above-125000-2025-10-05/
-- Reuters, Global crypto ETFs attract record $5.95 billion: https://www.reuters.com/sustainability/boards-policy-regulation/global-crypto-etfs-attract-record-595-billion-bitcoin-scales-new-highs-2025-10-07/
-- Bitbo Charts: https://charts.bitbo.io/
-- Bitbo Price 2018: https://charts.bitbo.io/price/2018
-- Bitbo Price 2022: https://charts.bitbo.io/price/2022
-- TradingView RSI docs: https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/
-- StockCharts School: https://school.stockcharts.com/
-- Glassnode docs: https://docs.glassnode.com/
-- CryptoQuant: https://cryptoquant.com/
-- CoinGlass: https://www.coinglass.com/
-- Plotly.js Configuration: https://plotly.com/javascript/configuration-options/
-- GitHub Pages docs: https://docs.github.com/pages
+- Binance BTCUSDT para base principal de ATH atual.
+- CoinGecko, Bitbo e reportagens históricas para cruzar datas e variações de ciclo.
 
-## Cuidado metodológico
+## Limites
 
-Exchange diferente pode mostrar máxima diferente. Por isso, este projeto não mistura wick de Binance com wick de agregador sem indicar a fonte. Para análise pessoal mais precisa, baixe OHLC da mesma exchange e mantenha consistência temporal.
+- Wicks mudam por corretora. Não misture ATH de Binance, CoinEx, Coinbase e agregadores sem avisar.
+- Livro de ordens mostra liquidez visível, não identidade institucional.
+- RSI abaixo de 30 mede sobrevenda, não fundo garantido.
+- Fear & Greed é filtro emocional, não modelo preditivo.

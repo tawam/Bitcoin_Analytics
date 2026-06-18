@@ -3,401 +3,333 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Bitcoin Cycle Lab | Tutorial interativo</title>
-  <meta name="description" content="Tutorial interativo para estudar Bitcoin por ciclos, análise técnica, on-chain, derivativos, market cap e confluência." />
+  <title>Bitcoin Analytics Lab | Tutorial + Radar Anti-FOMO</title>
+  <meta name="description" content="Site pessoal para estudar ciclos do Bitcoin, análise técnica, on-chain, derivativos e radar anti-FOMO com dados automáticos." />
   <meta name="theme-color" content="#070a12" />
-  <meta property="og:title" content="Bitcoin Cycle Lab" />
-  <meta property="og:description" content="Tutorial visual e interativo para analisar ciclos do Bitcoin." />
+  <meta property="og:title" content="Bitcoin Analytics Lab" />
+  <meta property="og:description" content="Tutorial e radar de confluência para analisar Bitcoin sem FOMO." />
   <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css" />
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/app.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#inicio">Pular para o conteúdo</a>
-  <div class="noise" aria-hidden="true"></div>
-  <div class="gradient-orb orb-a" aria-hidden="true"></div>
-  <div class="gradient-orb orb-b" aria-hidden="true"></div>
+  <div class="bg-noise" aria-hidden="true"></div>
+  <div class="orb orb-a" aria-hidden="true"></div>
+  <div class="orb orb-b" aria-hidden="true"></div>
 
-  <header class="top-shell" id="topo">
-    <div class="mobile-bar">
-      <button class="icon-button" id="navToggle" aria-label="Abrir menu" aria-expanded="false">☰</button>
-      <a class="mobile-brand" href="#inicio"><span>₿</span>Cycle Lab</a>
-      <button class="icon-button" id="themePulse" aria-label="Destacar caminho">✦</button>
-    </div>
+  <header class="mobile-topbar">
+    <button class="icon-btn" id="navToggle" aria-label="Abrir menu" aria-expanded="false">☰</button>
+    <a class="mobile-logo" href="#inicio"><span>₿</span> Analytics Lab</a>
+    <a class="icon-btn" href="#radar" aria-label="Abrir radar">↯</a>
   </header>
 
-  <div class="app-shell">
+  <div class="layout">
     <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
-      <div class="brand-card">
+      <div class="brand">
         <div class="brand-mark">₿</div>
         <div>
-          <strong>Bitcoin Cycle Lab</strong>
-          <span>Tutorial interativo</span>
+          <strong>Bitcoin Analytics Lab</strong>
+          <span>Tutorial + Radar Anti-FOMO</span>
         </div>
       </div>
-      <div class="side-note">
-        <span class="dot"></span>
-        <p>Leia como uma trilha. O site foi separado para uma ideia puxar a outra, sem despejar tudo de uma vez.</p>
-      </div>
-      <nav class="nav-list" id="navList">
-        <a href="#inicio" class="nav-link active"><span>01</span> Comece aqui</a>
-        <a href="#metodologia" class="nav-link"><span>02</span> Base e método</a>
-        <a href="#curvas" class="nav-link"><span>03</span> Curvas de ciclo</a>
-        <a href="#calendario" class="nav-link"><span>04</span> Datas e janelas</a>
-        <a href="#marketcap" class="nav-link"><span>05</span> Market cap</a>
-        <a href="#tendencia" class="nav-link"><span>06</span> Tendência</a>
-        <a href="#momentum" class="nav-link"><span>07</span> Momentum</a>
-        <a href="#estrutura" class="nav-link"><span>08</span> Estrutura gráfica</a>
-        <a href="#onchain" class="nav-link"><span>09</span> On-chain</a>
-        <a href="#derivativos" class="nav-link"><span>10</span> Derivativos</a>
-        <a href="#score" class="nav-link"><span>11</span> Score final</a>
-        <a href="#codigos" class="nav-link"><span>12</span> Fórmulas</a>
-        <a href="#glossario" class="nav-link"><span>13</span> Glossário</a>
-        <a href="#fontes" class="nav-link"><span>14</span> Fontes</a>
+
+      <div class="status-pill" id="sideStatus"><span></span> aguardando dados ao vivo</div>
+
+      <nav class="nav" id="navList">
+        <a class="nav-link active" href="#inicio"><span>01</span>Início</a>
+        <a class="nav-link" href="#mapa"><span>02</span>Mapa do site</a>
+        <a class="nav-link" href="#radar"><span>03</span>Radar Anti-FOMO</a>
+        <a class="nav-link" href="#ciclos"><span>04</span>Ciclos e curvas</a>
+        <a class="nav-link" href="#tutorial"><span>05</span>Tutorial</a>
+        <a class="nav-link" href="#estrutura"><span>06</span>Estrutura gráfica</a>
+        <a class="nav-link" href="#onchain"><span>07</span>On-chain</a>
+        <a class="nav-link" href="#derivativos"><span>08</span>Derivativos</a>
+        <a class="nav-link" href="#diario"><span>09</span>Diário de decisão</a>
+        <a class="nav-link" href="#glossario"><span>10</span>Glossário</a>
+        <a class="nav-link" href="#fontes"><span>11</span>Fontes</a>
       </nav>
-      <div class="side-actions">
-        <button class="soft-button full" onclick="window.print()">Exportar estudo</button>
-        <a class="soft-button full" href="#score">Montar diagnóstico</a>
+
+      <div class="side-card">
+        <small>Regra mental</small>
+        <p>O site não tenta prever fundo. Ele organiza sinais para evitar comprar por ansiedade.</p>
       </div>
     </aside>
 
     <main class="content">
-      <section class="hero-section observe" id="inicio">
+      <section class="hero observe" id="inicio">
         <div class="hero-copy">
           <div class="eyebrow"><span></span> laboratório pessoal de análise</div>
-          <h1>Aprenda a analisar Bitcoin com calma, contexto e confluência.</h1>
-          <p class="lead">Um tutorial visual para juntar ciclo, preço, estrutura, momentum, on-chain e derivativos. A promessa aqui não é acertar o futuro. É parar de olhar um indicador isolado como se ele fosse uma profecia.</p>
+          <h1>Bitcoin com método, não no impulso.</h1>
+          <p class="lead">Um site para estudar ciclos, entender indicadores e usar um radar automático de confluência antes de qualquer aporte. A parte tutorial ensina. A parte ao vivo mede o mercado agora.</p>
           <div class="hero-actions">
-            <a class="primary-button" href="#metodologia">Começar a trilha</a>
-            <a class="ghost-button" href="#curvas">Ir para curvas</a>
+            <a class="primary-btn" href="#radar">Abrir Radar Anti-FOMO</a>
+            <a class="ghost-btn" href="#tutorial">Estudar do começo</a>
           </div>
         </div>
-        <div class="hero-panel" aria-label="Resumo visual do ciclo atual">
-          <div class="btc-sigil">₿</div>
-          <div class="hero-stat top-left"><small>ATH base Binance</small><strong>US$ 126.198</strong><span>06 out 2025</span></div>
-          <div class="hero-stat top-right"><small>Alta 2022 a 2025</small><strong>~1.050 dias</strong><span>rima com ciclos maduros</span></div>
-          <div class="hero-stat bottom-left"><small>Janela observada</small><strong>out/nov 2026</strong><span>tempo de bear clássico</span></div>
-          <div class="hero-stat bottom-right"><small>Preço ao vivo</small><strong id="livePrice">offline</strong><span id="liveSub">modo didático</span></div>
+        <div class="hero-panel">
+          <div class="btc-orbit">₿</div>
+          <div class="metric-card float a"><small>Modo</small><strong>Anti-FOMO</strong><span>dados + trava emocional</span></div>
+          <div class="metric-card float b"><small>Timeframes</small><strong>1H · 4H · 1D</strong><span>preço, RSI e volume</span></div>
+          <div class="metric-card float c"><small>Ciclo atual</small><strong>janela 2026</strong><span>outubro → novembro</span></div>
         </div>
       </section>
 
-      <section class="intro-grid observe" aria-label="Trilha do estudo">
-        <article class="intro-card">
-          <span>1</span>
-          <h2>Primeiro, ciclo.</h2>
-          <p>Onde estamos no tempo? Alta, topo, baixa, acumulação ou retomada?</p>
-        </article>
-        <article class="intro-card">
-          <span>2</span>
-          <h2>Depois, estrutura.</h2>
-          <p>O preço faz topos e fundos ascendentes ou descendentes? O gráfico confirma a narrativa?</p>
-        </article>
-        <article class="intro-card">
-          <span>3</span>
-          <h2>Então, confluência.</h2>
-          <p>Momentum, on-chain, derivativos e macro estão apontando para o mesmo lado?</p>
-        </article>
-      </section>
-
-      <section class="chapter observe" id="metodologia">
-        <div class="chapter-kicker">02 · Base e método</div>
+      <section class="chapter observe" id="mapa">
         <div class="chapter-head">
           <div>
-            <h2>Antes de qualquer gráfico: escolha uma base e assuma as limitações.</h2>
-            <p>Bitcoin negocia em várias corretoras. Uma máxima na Binance pode ser diferente da CoinEx, Coinbase, Kraken ou de um agregador como CoinGecko. Isso não é detalhe técnico bobo. Misturar wick de fontes diferentes pode fabricar conclusão.</p>
+            <div class="eyebrow"><span></span> organização</div>
+            <h2>O site agora tem duas camadas: estudo e execução.</h2>
           </div>
-          <div class="chapter-summary">
-            <strong>Regra usada aqui</strong>
-            <p>Binance BTC/USDT como base principal do ATH atual. CoinGecko, Reuters, Bitbo e outras fontes entram como checagem.</p>
-          </div>
+          <p>Para não virar uma parede de informação, a navegação foi separada por categorias. O radar concentra todos os dados automáticos em um único hub.</p>
         </div>
-        <div class="card-grid two">
-          <article class="deep-card">
-            <h3>O que é dado factual?</h3>
-            <p>Datas de halving, fundos anuais, ATH por corretora e preço histórico publicado. Ainda assim, cada fonte tem critérios e horário de candle.</p>
-            <ul class="clean-list">
-              <li>Use uma base principal por estudo.</li>
-              <li>Mostre as divergências importantes.</li>
-              <li>Separe preço de exchange e preço agregado.</li>
-            </ul>
-          </article>
-          <article class="deep-card accent">
-            <h3>O que é inferência?</h3>
-            <p>Janela de fundo, padrão temporal, expectativa de reversão e leitura de ciclo. Isso pode ser coerente, mas não vira certeza só porque o gráfico ficou bonito.</p>
-            <ul class="clean-list">
-              <li>Inferência boa tem invalidação.</li>
-              <li>Não confunda repetição histórica com obrigação futura.</li>
-              <li>Quanto mais consenso, mais cuidado.</li>
-            </ul>
-          </article>
-        </div>
-        <div class="data-source-strip" id="athStrip"></div>
-      </section>
-
-      <section class="chapter observe" id="curvas">
-        <div class="chapter-kicker">03 · Curvas de ciclo</div>
-        <div class="chapter-head">
-          <div>
-            <h2>As curvas mostram o relógio do mercado, não uma data mágica.</h2>
-            <p>Esta seção compara duração das altas, baixas, drawdown, tempo do halving até o topo e força da alta em escala log. No celular, os gráficos não têm zoom. Use os botões de período e os pontos clicáveis para ler sem bagunçar a tela.</p>
-          </div>
-          <div class="control-card">
-            <label for="cycleFilter">Filtrar ciclos</label>
-            <select id="cycleFilter">
-              <option value="all">Todos os ciclos</option>
-              <option value="mature" selected>Ciclos maduros</option>
-              <option value="current">Foco no ciclo atual</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="chart-context-grid">
-          <article class="context-card">
-            <small>Leitura central</small>
-            <strong>O tempo repetiu melhor que o retorno.</strong>
-            <p>As altas maduras ficaram perto de 1.050 a 1.068 dias. Já a multiplicação caiu com a maturidade do ativo.</p>
-          </article>
-          <article class="context-card">
-            <small>Risco atual</small>
-            <strong>O bear pode ser mais longo sem ser mais profundo.</strong>
-            <p>Mercado com ETFs e instituições pode mudar a profundidade do drawdown, mas não elimina ciclos.</p>
-          </article>
-          <article class="context-card">
-            <small>Tese em teste</small>
-            <strong>Outubro a novembro de 2026.</strong>
-            <p>Janela temporal plausível para fundo ou acumulação, não botão automático de compra.</p>
-          </article>
-        </div>
-
-        <div class="chart-grid">
-          <article class="chart-card wide">
-            <div class="chart-head">
-              <div><h3>Curva macro por pontos</h3><p>Fundos e topos em escala log para enxergar ciclos sem distorção.</p></div>
-              <div class="chip-row" id="macroChips"></div>
-            </div>
-            <div id="macroCurveChart" class="plot"></div>
-            <div class="inspector" id="cycleInspector"></div>
-          </article>
-          <article class="chart-card">
-            <div class="chart-head"><div><h3>Duração das altas</h3><p>Fundo macro até topo.</p></div></div>
-            <div id="bullDurationChart" class="plot small"></div>
-          </article>
-          <article class="chart-card">
-            <div class="chart-head"><div><h3>Duração das baixas</h3><p>Topo macro até fundo posterior.</p></div></div>
-            <div id="bearDurationChart" class="plot small"></div>
-          </article>
-          <article class="chart-card">
-            <div class="chart-head"><div><h3>Drawdown</h3><p>Profundidade da queda.</p></div></div>
-            <div id="drawdownChart" class="plot small"></div>
-          </article>
-          <article class="chart-card">
-            <div class="chart-head"><div><h3>Halving até topo</h3><p>Dias entre halving e pico.</p></div></div>
-            <div id="halvingTopChart" class="plot small"></div>
-          </article>
-          <article class="chart-card">
-            <div class="chart-head"><div><h3>Força da alta em log</h3><p>Log10 do múltiplo de valorização.</p></div></div>
-            <div id="logForceChart" class="plot small"></div>
-          </article>
-          <article class="chart-card">
-            <div class="chart-head"><div><h3>Janela temporal atual</h3><p>Distância do topo de 2025 até possíveis fundos.</p></div></div>
-            <div id="currentWindowChart" class="plot small"></div>
-          </article>
+        <div class="path-grid">
+          <a href="#radar" class="path-card">
+            <b>01</b><h3>Radar Anti-FOMO</h3><p>Dados automáticos, veredito, gráficos 1H/4H/1D, RSI e leitura de confluência.</p>
+          </a>
+          <a href="#ciclos" class="path-card">
+            <b>02</b><h3>Ciclos e curvas</h3><p>Altas, baixas, drawdown, halving até topo, força log e janela temporal atual.</p>
+          </a>
+          <a href="#tutorial" class="path-card">
+            <b>03</b><h3>Tutorial</h3><p>Aprenda tendência, momentum, market cap, médias, RSI, volume e armadilhas.</p>
+          </a>
+          <a href="#diario" class="path-card">
+            <b>04</b><h3>Diário</h3><p>Registre análises para testar se sua estratégia funciona fora do achismo.</p>
+          </a>
         </div>
       </section>
 
-      <section class="chapter observe" id="calendario">
-        <div class="chapter-kicker">04 · Datas e janelas</div>
-        <div class="chapter-head">
+      <section class="chapter observe" id="radar">
+        <div class="chapter-head split">
           <div>
-            <h2>Pesquise uma data e veja em que parte do ciclo ela cai.</h2>
-            <p>Em vez de ficar dando zoom no gráfico pelo celular, use o campo de data ou os atalhos. O site mostra o evento macro mais próximo e uma leitura do regime.</p>
+            <div class="eyebrow"><span></span> dados automáticos concentrados</div>
+            <h2>Radar Anti-FOMO</h2>
+            <p>Esta área puxa dados públicos e transforma tudo em um checklist frio. A ideia é atrasar o impulso, não prometer entrada perfeita.</p>
+          </div>
+          <div class="button-row">
+            <button class="primary-btn small" id="refreshLive">Atualizar dados</button>
+            <button class="ghost-btn small" id="copyVerdict">Copiar veredito</button>
           </div>
         </div>
-        <div class="date-lab">
-          <div class="date-controls">
-            <label for="dateSearch">Pesquisar data</label>
-            <div class="date-input-row">
-              <input type="date" id="dateSearch" value="2026-11-01" />
-              <button class="primary-button compact" id="dateSearchBtn">Analisar</button>
-            </div>
-            <div class="quick-dates" id="quickDates"></div>
-          </div>
-          <div class="date-result" id="dateResult"></div>
+
+        <div class="anchor-row sticky-subnav" aria-label="Subnavegação do radar">
+          <a href="#liveHub">Dados ao vivo</a>
+          <a href="#marketCapRadar">Market cap</a>
+          <a href="#veredito">Veredito</a>
+          <a href="#graficosRadar">Gráficos</a>
+          <a href="#buscaData">Buscar data</a>
+          <a href="#metodoRadar">Método</a>
         </div>
-        <div class="timeline" id="macroTimeline"></div>
+
+        <div class="notice-card">
+          <b>Como ler:</b> sinal verde exige queda diária + RSI curto estressado + medo global. Se o site falhar ao puxar alguma API, ele marca o dado como indisponível e não força conclusão.
+        </div>
+
+        <div class="section-block" id="liveHub">
+          <div class="block-title">
+            <div><span>01</span><h3>Hub de dados ao vivo</h3></div>
+            <p>Todos os dados automáticos ficam aqui para facilitar auditoria: fonte, horário da leitura e status.</p>
+          </div>
+          <div class="live-grid" id="liveCards">
+            <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+          </div>
+          <div class="source-strip" id="apiSources"></div>
+        </div>
+
+        <div class="section-block" id="marketCapRadar">
+          <div class="block-title">
+            <div><span>02</span><h3>Market cap e preço agregado</h3></div>
+            <p>O preço da Binance serve para o gráfico operacional. O CoinGecko entra como visão agregada de mercado: market cap, volume e variação 24h.</p>
+          </div>
+          <div class="result-box" id="marketSnapshot">Aguardando CoinGecko...</div>
+          <div class="calc-grid">
+            <label>Preço simulado em USD
+              <input type="number" id="calcPrice" inputmode="decimal" min="0" step="1000" placeholder="Ex.: 100000" />
+            </label>
+            <label>Supply circulante
+              <input type="number" id="calcSupply" inputmode="decimal" min="0" step="100000" value="19800000" />
+            </label>
+            <div class="result-box" id="calcResult">Preencha preço e supply para simular.</div>
+          </div>
+        </div>
+
+        <div class="section-block" id="veredito">
+          <div class="block-title">
+            <div><span>03</span><h3>Veredito mecânico</h3></div>
+            <p>Critérios visuais e objetivos. O site mostra o que falta, em vez de inventar convicção.</p>
+          </div>
+          <div class="verdict-panel" id="verdictPanel">
+            <div class="verdict-main"><span>⏳</span><div><h3>Carregando dados...</h3><p>Aguardando leitura das APIs públicas.</p></div></div>
+          </div>
+          <div class="checklist-grid" id="checklistGrid"></div>
+        </div>
+
+        <div class="section-block" id="graficosRadar">
+          <div class="block-title">
+            <div><span>04</span><h3>Gráficos do radar</h3></div>
+            <p>Sem zoom por toque. Use os botões para trocar o período e os presets para localizar datas relevantes.</p>
+          </div>
+          <div class="timeframe-tabs" id="tfTabs">
+            <button class="tf active" data-tf="1h">1H</button>
+            <button class="tf" data-tf="4h">4H</button>
+            <button class="tf" data-tf="1d">1D</button>
+          </div>
+          <div class="chart-stack">
+            <div class="chart-card"><div class="chart-title"><strong>Preço + EMA 21/50</strong><span id="priceChartLabel">BTCUSDT · 1H</span></div><div id="priceChart" class="chart"></div></div>
+            <div class="chart-card"><div class="chart-title"><strong>RSI 14</strong><span>zonas 30/70</span></div><div id="rsiChart" class="chart small-chart"></div></div>
+            <div class="chart-card"><div class="chart-title"><strong>Volume</strong><span>comparado à média recente</span></div><div id="volumeChart" class="chart small-chart"></div></div>
+          </div>
+        </div>
+
+        <div class="section-block" id="buscaData">
+          <div class="block-title">
+            <div><span>05</span><h3>Busca por data e presets</h3></div>
+            <p>Escolha uma data. Se ela estiver fora da janela carregada, o site tenta buscar o candle histórico diretamente na Binance.</p>
+          </div>
+          <div class="date-tools">
+            <label>Pesquisar data
+              <input type="date" id="dateSearch" />
+            </label>
+            <button class="soft-btn" id="findDate">Buscar candle</button>
+          </div>
+          <div class="preset-row" id="presetDates"></div>
+          <div class="result-box" id="dateResult">Selecione uma data para buscar preço, volume e RSI. Datas futuras funcionam apenas como referência de ciclo.</div>
+        </div>
+
+        <div class="section-block" id="metodoRadar">
+          <div class="block-title">
+            <div><span>06</span><h3>Mini tutorial do radar</h3></div>
+            <p>O radar não substitui análise. Ele força uma sequência lógica para reduzir ansiedade operacional.</p>
+          </div>
+          <div class="mini-grid">
+            <article><h4>Vela diária vermelha</h4><p>Confirma que o mercado está caindo no dia. Sem queda, não é compra por pânico; é compra por vontade.</p></article>
+            <article><h4>RSI 1H/4H</h4><p>Mostra estresse de curto prazo. Abaixo de 30 sugere sobrevenda, mas pode continuar sobrevendido em bear forte.</p></article>
+            <article><h4>Fear & Greed</h4><p>Sentimento global. Quanto menor, maior o medo. Serve como filtro emocional, não como garantia.</p></article>
+            <article><h4>Funding Rate</h4><p>Quando muito positivo, longs estão pagando caro para ficar comprados. Negativo/neutro costuma aliviar euforia.</p></article>
+            <article><h4>Volume</h4><p>Volume alto em queda pode indicar pânico ou capitulação. Volume baixo pode ser só mercado vazio.</p></article>
+            <article><h4>Livro de ordens</h4><p>Mostra liquidez visível. Não chame de institucional: ordens podem sumir, mudar ou ser isca.</p></article>
+          </div>
+        </div>
       </section>
 
-      <section class="chapter observe" id="marketcap">
-        <div class="chapter-kicker">05 · Market cap</div>
+      <section class="chapter observe" id="ciclos">
         <div class="chapter-head">
           <div>
-            <h2>Preço sozinho engana. Market cap mostra o tamanho real da aposta.</h2>
-            <p>Bitcoin a US$ 200 mil parece uma frase simples, mas implica um valor de mercado específico. A conta ajuda a testar se a narrativa cabe no mundo real.</p>
+            <div class="eyebrow"><span></span> ciclo macro</div>
+            <h2>Curvas históricas do Bitcoin</h2>
           </div>
-          <div class="formula-card"><code>market cap = preço × supply circulante</code></div>
+          <p>Aqui entram dados estruturais: duração das altas, baixas, drawdown, halving até topo e força log. Estes dados são estáticos e documentados, não dependem de API ao vivo.</p>
         </div>
-        <div class="card-grid two">
-          <article class="deep-card">
-            <h3>Calculadora rápida</h3>
-            <div class="calc-grid">
-              <label>Preço BTC em USD<input id="priceInput" type="number" value="126198" min="1" step="100" /></label>
-              <label>Supply circulante<input id="supplyInput" type="number" value="19900000" min="1" step="1000" /></label>
-            </div>
-            <div class="calc-result" id="marketCapResult"></div>
-          </article>
-          <article class="chart-card no-min">
-            <div class="chart-head"><div><h3>Cenários de market cap</h3><p>Simulação didática por preço.</p></div></div>
-            <div id="marketCapChart" class="plot small"></div>
-          </article>
+        <div class="anchor-row">
+          <a href="#cycleDashboard">Dashboard</a>
+          <a href="#cycleTerms">Termos</a>
+          <a href="#currentWindow">Janela atual</a>
+        </div>
+        <div class="section-block" id="cycleDashboard">
+          <div class="chart-grid two">
+            <div class="chart-card"><div class="chart-title"><strong>Duração das altas</strong><span>fundo → topo</span></div><div id="bullDurationChart" class="chart"></div></div>
+            <div class="chart-card"><div class="chart-title"><strong>Duração das baixas</strong><span>topo → fundo</span></div><div id="bearDurationChart" class="chart"></div></div>
+            <div class="chart-card"><div class="chart-title"><strong>Drawdown</strong><span>queda máxima do topo</span></div><div id="drawdownChart" class="chart"></div></div>
+            <div class="chart-card"><div class="chart-title"><strong>Halving até topo</strong><span>tempo pós-halving</span></div><div id="halvingChart" class="chart"></div></div>
+            <div class="chart-card"><div class="chart-title"><strong>Força da alta em escala log</strong><span>multiplicação por ciclo</span></div><div id="logForceChart" class="chart"></div></div>
+            <div class="chart-card"><div class="chart-title"><strong>Curva esquemática macro</strong><span>pontos do ciclo atual</span></div><div id="macroCurveChart" class="chart"></div></div>
+          </div>
+        </div>
+        <div class="section-block" id="cycleTerms">
+          <div class="term-grid compact">
+            <article><h4>Duração da alta</h4><p>Tempo entre o fundo macro e o topo do ciclo. Ajuda a comparar se uma parábola está curta, normal ou estendida.</p></article>
+            <article><h4>Duração da baixa</h4><p>Tempo entre o topo e o fundo seguinte. A tese out/nov 2026 nasce dessa métrica.</p></article>
+            <article><h4>Drawdown</h4><p>Queda percentual do topo até o fundo. Mede dor real, não apenas tempo.</p></article>
+            <article><h4>Halving até topo</h4><p>Dias entre o corte de emissão e o topo. Desde 2016, tem rondado 526–548 dias nos ciclos principais.</p></article>
+            <article><h4>Força log</h4><p>Mostra a multiplicação da alta sem deixar ciclos antigos gigantes esmagarem os ciclos recentes.</p></article>
+            <article><h4>Curva macro</h4><p>Esquema visual: fundo, acumulação, expansão, euforia, quebra, bear e possível janela de fundo.</p></article>
+          </div>
+        </div>
+        <div class="section-block" id="currentWindow">
+          <div class="current-window">
+            <div><small>Janela temporal atual</small><h3>Outubro → Novembro de 2026</h3><p>Se o topo macro foi em 06/10/2025, um bear de 365 a 420 dias colocaria a busca por fundo entre outubro e novembro de 2026. Isso é janela estatística, não promessa.</p></div>
+            <div class="window-bars"><span style="--w:72%">365 dias</span><span style="--w:82%">391 dias</span><span style="--w:88%">420 dias</span></div>
+          </div>
         </div>
       </section>
 
-      <section class="chapter observe" id="tendencia">
-        <div class="chapter-kicker">06 · Tendência</div>
+      <section class="chapter observe" id="tutorial">
         <div class="chapter-head">
           <div>
-            <h2>Médias móveis e estrutura respondem: o mercado está subindo ou só respirando?</h2>
-            <p>Use médias para suavizar o ruído e pivots para confirmar mudança de comportamento. Média móvel sem estrutura vira linha bonita. Estrutura sem média pode ignorar contexto.</p>
+            <div class="eyebrow"><span></span> trilha de estudo</div>
+            <h2>Tutorial: como analisar Bitcoin sem bagunça mental.</h2>
           </div>
+          <p>A lógica é sair do macro para o micro: ciclo, tendência, momentum, estrutura, on-chain e derivativos.</p>
         </div>
-        <div class="lesson-layout">
-          <article class="lesson-text">
-            <h3>Como ler médias móveis</h3>
-            <ol class="step-list">
-              <li><strong>Inclinação:</strong> média subindo indica pressão compradora persistente.</li>
-              <li><strong>Posição do preço:</strong> preço acima das médias longas favorece tendência de alta.</li>
-              <li><strong>Distância:</strong> preço muito longe da média pode indicar excesso temporário.</li>
-              <li><strong>Regime:</strong> em lateralização, cruzamento de média dá muito alarme falso.</li>
-            </ol>
-          </article>
-          <article class="chart-card no-min">
-            <div id="maDemoChart" class="plot medium"></div>
-          </article>
-        </div>
-      </section>
-
-      <section class="chapter observe" id="momentum">
-        <div class="chapter-kicker">07 · Momentum</div>
-        <div class="chapter-head">
-          <div>
-            <h2>RSI e estocástico medem velocidade, não destino.</h2>
-            <p>Momentum é útil para detectar força, exaustão e divergências. Mas em tendência forte, indicadores podem ficar “esticados” por muito tempo.</p>
-          </div>
-        </div>
-        <div class="indicator-grid" id="indicatorCards"></div>
-        <div class="chart-grid two-only">
-          <article class="chart-card"><div id="rsiDemoChart" class="plot small"></div></article>
-          <article class="chart-card"><div id="stochDemoChart" class="plot small"></div></article>
+        <div class="lesson-stack">
+          <article class="lesson-card"><span>01</span><h3>Comece pelo ciclo</h3><p>Antes de olhar 1H, pergunte: estamos em acumulação, expansão, euforia, distribuição, bear ou lateralização?</p><ul><li>Use duração da alta/baixa.</li><li>Compare drawdown atual.</li><li>Veja distância do halving ao topo.</li></ul></article>
+          <article class="lesson-card"><span>02</span><h3>Depois leia tendência</h3><p>Médias móveis ajudam a entender direção. Preço acima de EMA 21/50 tende a favorecer continuação; abaixo delas, cautela.</p><ul><li>EMA 21: ritmo curto.</li><li>EMA 50: tendência intermediária.</li><li>EMA 200: regime macro.</li></ul></article>
+          <article class="lesson-card"><span>03</span><h3>Use momentum para medir estresse</h3><p>RSI e estocástico medem velocidade. Sobrevenda não é fundo garantido; é apenas sinal de tensão.</p><ul><li>RSI &lt; 30: sobrevenda.</li><li>RSI &gt; 70: sobrecompra.</li><li>Divergência vale mais que número isolado.</li></ul></article>
+          <article class="lesson-card"><span>04</span><h3>Confirme com estrutura</h3><p>Pivot, canal e cunha mostram se o preço está construindo virada ou apenas respirando antes de cair mais.</p><ul><li>Pivot de alta: topo/fundo ascendente.</li><li>Pivot de baixa: topo/fundo descendente.</li><li>Rompimento sem volume é suspeito.</li></ul></article>
+          <article class="lesson-card"><span>05</span><h3>Chegue ao on-chain</h3><p>On-chain tenta medir comportamento dos detentores reais: lucro/prejuízo, preço realizado e capitulação.</p><ul><li>MVRV alto: euforia/risco.</li><li>SOPR &lt; 1: venda no prejuízo.</li><li>Reservas em exchanges: pressão potencial de venda.</li></ul></article>
+          <article class="lesson-card"><span>06</span><h3>Finalize com derivativos</h3><p>Funding e open interest mostram se o mercado está alavancado demais para um lado.</p><ul><li>Funding muito positivo: longs lotados.</li><li>Funding negativo: shorts pagando.</li><li>OI alto + queda: risco de liquidação.</li></ul></article>
         </div>
       </section>
 
       <section class="chapter observe" id="estrutura">
-        <div class="chapter-kicker">08 · Estrutura gráfica</div>
-        <div class="chapter-head">
-          <div>
-            <h2>Pivot, canal e cunha são linguagem de comportamento coletivo.</h2>
-            <p>O erro é desenhar padrão para justificar vontade. A sequência correta é: contexto, linhas, rompimento, fechamento, volume, reteste e invalidação.</p>
-          </div>
-        </div>
-        <div class="pattern-lab">
-          <div class="pattern-buttons" id="patternButtons"></div>
-          <div class="pattern-board">
-            <svg id="patternSvg" viewBox="0 0 760 420" role="img" aria-label="Diagrama de padrão gráfico"></svg>
-          </div>
-          <div class="pattern-explain" id="patternExplain"></div>
-        </div>
+        <div class="chapter-head"><div><div class="eyebrow"><span></span> preço e estrutura</div><h2>Padrões gráficos sem misticismo.</h2></div><p>Os desenhos ajudam a organizar o mercado, mas não são profecia. Eles precisam de volume, contexto e confirmação.</p></div>
+        <div class="pattern-grid" id="patternGrid"></div>
       </section>
 
       <section class="chapter observe" id="onchain">
-        <div class="chapter-kicker">09 · On-chain</div>
-        <div class="chapter-head">
-          <div>
-            <h2>On-chain tenta responder: os holders estão em lucro, dor ou capitulação?</h2>
-            <p>Esses indicadores não são oráculos. Eles são sinais do estado interno da rede: custo agregado, lucro realizado, moedas entrando ou saindo de exchanges.</p>
-          </div>
+        <div class="chapter-head"><div><div class="eyebrow"><span></span> comportamento da rede</div><h2>On-chain: sinais de holder, lucro e capitulação.</h2></div><p>Nem todo dado on-chain é gratuito em tempo real. Aqui a área é tutorial e referência; o radar ao vivo usa APIs públicas disponíveis.</p></div>
+        <div class="term-grid">
+          <article><h4>MVRV</h4><p>Compara valor de mercado com valor realizado. Muito alto sugere euforia; muito baixo pode sinalizar subavaliação.</p></article>
+          <article><h4>Realized Price</h4><p>Preço médio pelo qual as moedas se moveram pela última vez. Funciona como custo-base agregado da rede.</p></article>
+          <article><h4>SOPR</h4><p>Mostra se moedas vendidas estão realizando lucro ou prejuízo. Abaixo de 1 indica venda no prejuízo.</p></article>
+          <article><h4>Exchange Reserves</h4><p>Quando moedas vão para corretoras, pode haver intenção de venda. Quando saem, pode indicar autocustódia/acumulação.</p></article>
         </div>
-        <div class="card-grid three" id="onchainCards"></div>
-        <div class="chart-card wide"><div id="onchainRegimeChart" class="plot medium"></div></div>
       </section>
 
       <section class="chapter observe" id="derivativos">
-        <div class="chapter-kicker">10 · Derivativos</div>
-        <div class="chapter-head">
-          <div>
-            <h2>Derivativos mostram onde o mercado está alavancado demais.</h2>
-            <p>Funding, open interest e liquidações ajudam a detectar quando o mercado virou uma pilha de pólvora. O problema não é alavancagem existir. É todo mundo estar no mesmo lado.</p>
-          </div>
-        </div>
-        <div class="card-grid three" id="derivativeCards"></div>
-        <div class="chart-card wide"><div id="derivativeRiskChart" class="plot medium"></div></div>
-      </section>
-
-      <section class="chapter observe" id="score">
-        <div class="chapter-kicker">11 · Score final</div>
-        <div class="chapter-head">
-          <div>
-            <h2>Monte um diagnóstico com confluência, não com torcida.</h2>
-            <p>Arraste os fatores e veja como o regime muda. O objetivo não é criar um robô mágico. É obrigar sua cabeça a comparar sinais antes de concluir.</p>
-          </div>
-        </div>
-        <div class="score-layout">
-          <div class="score-controls" id="scoreControls"></div>
-          <div class="score-panel">
-            <div class="score-ring"><span id="scoreNumber">50</span><small>/100</small></div>
-            <h3 id="scoreTitle">Neutro</h3>
-            <p id="scoreText">Mercado sem confluência suficiente. Espere confirmação ou reduza tamanho de posição.</p>
-          </div>
-        </div>
-        <div class="checklist-card">
-          <h3>Checklist antes de qualquer tese</h3>
-          <div id="checklist"></div>
+        <div class="chapter-head"><div><div class="eyebrow"><span></span> alavancagem</div><h2>Derivativos: onde o mercado fica frágil.</h2></div><p>O radar puxa funding automaticamente da Binance Futures. Open interest e liquidações podem entrar depois via fontes específicas.</p></div>
+        <div class="term-grid">
+          <article><h4>Funding Rate</h4><p>Pagamento entre longs e shorts em perpétuos. Positivo: longs pagam shorts. Negativo: shorts pagam longs.</p></article>
+          <article><h4>Open Interest</h4><p>Total de contratos abertos. OI alto com preço esticado aumenta risco de liquidação em cadeia.</p></article>
+          <article><h4>Liquidações</h4><p>Fechamentos forçados de posições alavancadas. Podem acelerar movimentos e criar pavios violentos.</p></article>
+          <article><h4>Squeeze</h4><p>Quando um lado lotado é forçado a sair. Short squeeze sobe rápido; long squeeze cai rápido.</p></article>
         </div>
       </section>
 
-      <section class="chapter observe" id="codigos">
-        <div class="chapter-kicker">12 · Fórmulas e pseudocódigos</div>
-        <div class="chapter-head">
-          <div>
-            <h2>Por trás do indicador existe uma conta simples.</h2>
-            <p>Você não precisa programar tudo, mas precisa entender o que cada número está medindo. Isso corta metade dos golpes intelectuais do mercado.</p>
+      <section class="chapter observe" id="diario">
+        <div class="chapter-head"><div><div class="eyebrow"><span></span> registro pessoal</div><h2>Diário de decisão</h2></div><p>O jeito adulto de validar estratégia é registrar antes e revisar depois. Sem isso, a memória vira advogado do ego.</p></div>
+        <div class="diary-box">
+          <div class="diary-form">
+            <label>Nota da decisão<textarea id="decisionNote" placeholder="Ex.: Não comprei porque F&G ainda alto e RSI 4H acima de 35."></textarea></label>
+            <button class="primary-btn small" id="saveDecision">Salvar no navegador</button>
+            <button class="ghost-btn small" id="clearDecisions">Limpar diário</button>
           </div>
+          <div class="decision-list" id="decisionList"></div>
         </div>
-        <div class="code-grid" id="codeGrid"></div>
       </section>
 
       <section class="chapter observe" id="glossario">
-        <div class="chapter-kicker">13 · Glossário</div>
-        <div class="chapter-head">
-          <div>
-            <h2>Pesquise qualquer termo do site.</h2>
-            <p>Use isso como cola de estudo. Termo técnico bom é aquele que melhora sua decisão, não o que te faz parecer mais avançado.</p>
-          </div>
-          <div class="search-card"><input id="glossarySearch" placeholder="Buscar termo: MVRV, RSI, drawdown..." /></div>
-        </div>
-        <div class="filter-pills" id="glossaryFilters"></div>
+        <div class="chapter-head"><div><div class="eyebrow"><span></span> consulta rápida</div><h2>Glossário</h2></div><p>Pesquise um termo e vá direto ao ponto.</p></div>
+        <input class="search-input" id="glossarySearch" placeholder="Pesquisar: RSI, funding, drawdown, EMA..." />
         <div class="glossary-grid" id="glossaryGrid"></div>
       </section>
 
       <section class="chapter observe" id="fontes">
-        <div class="chapter-kicker">14 · Fontes</div>
-        <div class="chapter-head">
-          <div>
-            <h2>Fontes e transparência metodológica.</h2>
-            <p>Este site é didático. Ele combina dados históricos fixos, fontes públicas e simulações. Onde houver preço atual, a API pode falhar e o site continua funcionando em modo estático.</p>
-          </div>
+        <div class="chapter-head"><div><div class="eyebrow"><span></span> auditoria</div><h2>Fontes e limites</h2></div><p>O site usa dados públicos e APIs sem chave. Se um dado essencial falhar, o Radar não inventa sinal nem usa candle simulado.</p></div>
+        <div class="sources-list">
+          <article><h4>Dados ao vivo</h4><p>Binance Spot klines/ticker/depth, Binance Futures premium index, Alternative.me Fear & Greed e CoinGecko simple price/market cap.</p></article>
+          <article><h4>Dados de ciclo</h4><p>Datas e preços aproximados cruzados entre Binance, CoinGecko, Bitbo e reportagens históricas. Wicks variam por corretora.</p></article>
+          <article><h4>Limite metodológico</h4><p>Livro de ordens mostra liquidez visível, não identidade institucional. RSI mostra momentum, não fundo garantido. F&G mede sentimento, mas também embute volatilidade.</p></article>
         </div>
-        <div class="source-grid" id="sourceGrid"></div>
       </section>
     </main>
   </div>
 
-  <button class="back-top" id="backTop" aria-label="Voltar ao topo">↑</button>
-  <div class="mobile-overlay" id="overlay"></div>
-
-  <script src="assets/js/data.js"></script>
-  <script src="assets/js/app.js"></script>
+  <div class="toast" id="toast"></div>
 </body>
 </html>

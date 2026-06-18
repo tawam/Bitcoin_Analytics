@@ -1,29 +1,33 @@
-# Bitcoin Cycle Lab
+# Bitcoin Analytics Lab
 
-Site tutorial interativo para estudo pessoal de Bitcoin: ciclos, curvas, análise técnica, on-chain, derivativos, market cap, padrões gráficos e score de confluência.
+Site pessoal para GitHub Pages com duas áreas principais:
 
-## Como publicar no GitHub Pages
+1. **Tutorial** — estudo estruturado de ciclos, tendência, momentum, estrutura, on-chain e derivativos.
+2. **Radar Anti-FOMO** — hub de dados automáticos, veredito mecânico, RSI 1H/4H/1D e checklist de confluência.
 
-1. Envie todos os arquivos desta pasta para a raiz do repositório.
-2. Confirme que `index.html` está na raiz.
-3. Vá em `Settings > Pages`.
-4. Em `Build and deployment`, escolha `Deploy from a branch`.
-5. Selecione branch `main` e pasta `/root` ou `/`.
-6. Salve e aguarde o deploy.
+## Como publicar
 
-O site foi feito para funcionar como estático. Ele usa Plotly via CDN para os gráficos e tenta buscar preço ao vivo na API pública da CoinGecko. Se a API falhar, o site continua funcionando com dados estáticos.
+Suba todo o conteúdo desta pasta para a raiz do repositório GitHub e ative **Settings > Pages > Deploy from a branch > main > /root**.
 
-## Mobile
+Arquivos essenciais:
 
-A versão 2 foi otimizada para celular:
-
-- menu lateral vira drawer;
-- gráficos sem zoom, pan ou modebar;
-- eixos com `fixedrange`;
-- campo de pesquisa por data;
-- atalhos de datas macro;
-- seções mais espaçadas e leitura em trilha.
+- `index.html`
+- `.nojekyll`
+- `assets/css/styles.css`
+- `assets/js/data.js`
+- `assets/js/app.js`
+- `README.md`
+- `SOURCES.md`
 
 ## Observação
 
-Material educacional. Não é recomendação financeira.
+O site usa APIs públicas sem chave. Se alguma fonte bloquear CORS, rate limit ou ficar indisponível, o radar marca o dado como parcial e mantém apoio visual.
+
+
+## v3.1
+
+- Radar não usa candles simulados: se dados essenciais falham, o sinal é bloqueado.
+- Funding identificado como Binance Futures, não global.
+- CoinGecko aparece como visão agregada de market cap e volume.
+- Busca por data tenta consultar candles históricos na Binance quando a data não está na janela carregada.
+- Gráficos reforçados para mobile sem zoom/pan acidental.
